@@ -824,25 +824,176 @@
     }
 
     // ============================================
+    // LESSON MARKERS
+    // ============================================
+    class LessonMarkers {
+        constructor(videoController) {
+            this.video = videoController;
+            this.storageKey = `bbb-markers-${window.location.pathname}`;
+            this.markers = this.loadMarkers();
+            this.elements = {};
+        }
+
+        loadMarkers() {
+            try {
+                const saved = localStorage.getItem(this.storageKey);
+                return saved ? JSON.parse(saved) : { start: null, end: null };
+            } catch (e) {
+                return { start: null, end: null };
+            }
+        }
+
+        saveMarkers() {
+            try {
+                localStorage.setItem(this.storageKey, JSON.stringify(this.markers));
+            } catch (e) {
+                console.warn('[BBB Enhancer] Could not save markers:', e);
+            }
+        }
+
+        setStartMarker() {
+            this.markers.start = this.video.getCurrentTime();
+            this.saveMarkers();
+            this.updateUI();
+            return this.markers.start;
+        }
+
+        setEndMarker() {
+            this.markers.end = this.video.getCurrentTime();
+            this.saveMarkers();
+            this.updateUI();
+            return this.markers.end;
+        }
+
+        clearStartMarker() {
+            this.markers.start = null;
+            this.saveMarkers();
+            this.updateUI();
+        }
+
+        clearEndMarker() {
+            this.markers.end = null;
+            this.saveMarkers();
+            this.updateUI();
+        }
+
+        jumpToStart() {
+            if (this.markers.start !== null) {
+                this.video.setCurrentTime(this.markers.start);
+            }
+        }
+
+        jumpToEnd() {
+            if (this.markers.end !== null) {
+                this.video.setCurrentTime(this.markers.end);
+            }
+        }
+
+        createUI(progressBar) {
+            // Create start marker element
+            this.elements.startMarker = document.createElement('div');
+            this.elements.startMarker.className = 'bbb-marker bbb-marker-start';
+            this.elements.startMarker.title = 'Ders Başlangıcı';
+            this.elements.startMarker.style.display = 'none';
+            this.elements.startMarker.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.jumpToStart();
+            });
+
+            // Create end marker element
+            this.elements.endMarker = document.createElement('div');
+            this.elements.endMarker.className = 'bbb-marker bbb-marker-end';
+            this.elements.endMarker.title = 'Ders Bitişi';
+            this.elements.endMarker.style.display = 'none';
+            this.elements.endMarker.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.jumpToEnd();
+            });
+
+            progressBar.appendChild(this.elements.startMarker);
+            progressBar.appendChild(this.elements.endMarker);
+
+            this.updateUI();
+        }
+
+        updateUI() {
+            const duration = this.video.getDuration();
+            if (!duration || duration <= 0) return;
+
+            // Update start marker
+            if (this.markers.start !== null && this.elements.startMarker) {
+                const startPercent = (this.markers.start / duration) * 100;
+                this.elements.startMarker.style.left = `${startPercent}%`;
+                this.elements.startMarker.style.display = 'block';
+                this.elements.startMarker.title = `Ders Başı: ${formatTime(this.markers.start)}`;
+            } else if (this.elements.startMarker) {
+                this.elements.startMarker.style.display = 'none';
+            }
+
+            // Update end marker
+            if (this.markers.end !== null && this.elements.endMarker) {
+                const endPercent = (this.markers.end / duration) * 100;
+                this.elements.endMarker.style.left = `${endPercent}%`;
+                this.elements.endMarker.style.display = 'block';
+                this.elements.endMarker.title = `Ders Sonu: ${formatTime(this.markers.end)}`;
+            } else if (this.elements.endMarker) {
+                this.elements.endMarker.style.display = 'none';
+            }
+        }
+    }
+
+    // ============================================
     // INITIALIZATION
     // ============================================
+    let videoController = null;
+    let uiController = null;
+    let lessonMarkers = null;
+
+    // Hide original BBB elements immediately (before DOM is fully loaded)
+    const hideOriginalElementsEarly = () => {
+        // Add class to body immediately for CSS to work
+        document.body.classList.add('bbb-enhancer-active');
+
+        // Hide elements that might flash
+        const style = document.createElement('style');
+        style.id = 'bbb-enhancer-early-hide';
+        style.textContent = `
+            .application, .webcams-wrapper, #webcams, .thumbnails-wrapper, 
+            #thumbnails, .top-bar, .bottom-bar, .vjs-control-bar, 
+            .fullscreen-button, .vjs-big-play-button {
+                display: none !important;
+                visibility: hidden !important;
+            }
+        `;
+        document.head.appendChild(style);
+    };
+
     const init = async () => {
         log('Initializing BBB Enhancer...');
 
         try {
-            const videoController = new VideoController();
+            videoController = new VideoController();
             await videoController.init();
 
-            const uiController = new UIController(videoController);
+            uiController = new UIController(videoController);
             uiController.init();
 
+            // Initialize lesson markers
+            lessonMarkers = new LessonMarkers(videoController);
+            lessonMarkers.createUI(uiController.elements.progressBar);
+
             // Update duration once loaded
-            setTimeout(() => {
+            const updateDuration = () => {
                 const duration = videoController.getDuration();
                 if (duration > 0) {
                     document.getElementById('bbb-duration').textContent = formatTime(duration);
+                    lessonMarkers.updateUI();
                 }
-            }, 1000);
+            };
+
+            // Try immediately and after a short delay
+            updateDuration();
+            setTimeout(updateDuration, 500);
 
             log('BBB Enhancer initialized successfully');
         } catch (error) {
@@ -850,11 +1001,107 @@
         }
     };
 
-    // Wait for DOM to be ready
+    // ============================================
+    // MESSAGE API (for popup communication)
+    // ============================================
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+            // Make sure controllers are available
+            if (!videoController || !videoController.isReady) {
+                sendResponse({ error: 'Video not ready' });
+                return true;
+            }
+
+            switch (message.action) {
+                case 'getState':
+                    sendResponse({
+                        isPlaying: !videoController.isPaused(),
+                        currentTime: videoController.getCurrentTime(),
+                        duration: videoController.getDuration(),
+                        playbackRate: videoController.getPlaybackRate(),
+                        volume: videoController.getVolume(),
+                        muted: videoController.isMuted(),
+                        title: document.title,
+                        markers: lessonMarkers ? lessonMarkers.markers : { start: null, end: null }
+                    });
+                    break;
+
+                case 'togglePlay':
+                    videoController.togglePlay();
+                    sendResponse({ success: true });
+                    break;
+
+                case 'seekForward':
+                    videoController.seekForward(message.seconds || 10);
+                    sendResponse({ success: true });
+                    break;
+
+                case 'seekBackward':
+                    videoController.seekBackward(message.seconds || 10);
+                    sendResponse({ success: true });
+                    break;
+
+                case 'seek':
+                    videoController.setCurrentTime(message.time);
+                    sendResponse({ success: true });
+                    break;
+
+                case 'setPlaybackRate':
+                    videoController.setPlaybackRate(message.rate);
+                    sendResponse({ success: true });
+                    break;
+
+                case 'setVolume':
+                    videoController.setVolume(message.volume);
+                    sendResponse({ success: true });
+                    break;
+
+                case 'toggleMute':
+                    videoController.toggleMute();
+                    sendResponse({ success: true });
+                    break;
+
+                case 'setMarker':
+                    if (lessonMarkers) {
+                        if (message.type === 'start') {
+                            lessonMarkers.setStartMarker();
+                        } else if (message.type === 'end') {
+                            lessonMarkers.setEndMarker();
+                        }
+                        sendResponse({ success: true, markers: lessonMarkers.markers });
+                    }
+                    break;
+
+                case 'jumpToMarker':
+                    if (lessonMarkers) {
+                        if (message.marker === 'start') {
+                            lessonMarkers.jumpToStart();
+                        } else if (message.marker === 'end') {
+                            lessonMarkers.jumpToEnd();
+                        }
+                        sendResponse({ success: true });
+                    }
+                    break;
+
+                default:
+                    sendResponse({ error: 'Unknown action' });
+            }
+            return true; // Keep channel open for async response
+        });
+    }
+
+    // ============================================
+    // START - Instant load without delay
+    // ============================================
+    // Hide original elements immediately
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
+        document.addEventListener('DOMContentLoaded', () => {
+            hideOriginalElementsEarly();
+            init();
+        });
     } else {
-        // Small delay to ensure video-js is loaded
-        setTimeout(init, 1000);
+        hideOriginalElementsEarly();
+        // Start init immediately - video-js polling in VideoController handles waiting
+        init();
     }
 })();
