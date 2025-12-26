@@ -1,5 +1,7 @@
 # BBB Playback Enhancer
 
+<img src="icons/icon128.png" alt="BBB Playback Enhancer" width="64">
+
 Browser extension for BigBlueButton playback pages. Provides modern media controls with Material You design.
 
 ## Features
