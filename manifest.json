@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "BBB Playback Enhancer",
+  "version": "1.0.0",
+  "description": "BigBlueButton kayıt oynatma sayfaları için modern, YouTube benzeri medya kontrol arayüzü",
+  "author": "Bugra",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://bbbvmain2.sabis.sakarya.edu.tr/playback/*",
+        "*://*.bigbluebutton.org/playback/*",
+        "*://*/playback/presentation/*"
+      ],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": [],
+  "host_permissions": [
+    "*://bbbvmain2.sabis.sakarya.edu.tr/*"
+  ]
+}
