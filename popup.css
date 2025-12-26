@@ -27,10 +27,6 @@
     --m3-on-surface-variant: #CAC4D0;
     --m3-outline: #938F99;
     --m3-outline-variant: #49454F;
-
-    /* Markers */
-    --marker-start: #A8DAB5;
-    --marker-end: #F4B8B8;
 }
 
 * {
@@ -164,29 +160,6 @@ body {
     transition: width 0.1s linear;
 }
 
-.popup-marker {
-    position: absolute;
-    top: -3px;
-    width: 4px;
-    height: 12px;
-    border-radius: 2px;
-    cursor: pointer;
-    z-index: 10;
-    transition: transform 0.2s;
-}
-
-.popup-marker:hover {
-    transform: scaleY(1.3);
-}
-
-.popup-marker-start {
-    background: var(--marker-start);
-}
-
-.popup-marker-end {
-    background: var(--marker-end);
-}
-
 .popup-time {
     display: flex;
     align-items: center;
@@ -241,64 +214,6 @@ body {
     color: var(--m3-on-surface);
 }
 
-/* Marker Controls */
-.popup-markers {
-    display: flex;
-    gap: 8px;
-}
-
-.popup-marker-btn {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    background: var(--m3-surface-container);
-    border: 1px solid var(--m3-outline-variant);
-    border-radius: 20px;
-    padding: 8px 12px;
-    font-size: 11px;
-    color: var(--m3-on-surface-variant);
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.popup-marker-btn:hover {
-    background: var(--m3-surface-container-high);
-}
-
-.popup-marker-btn-start:hover {
-    border-color: var(--marker-start);
-    color: var(--marker-start);
-}
-
-.popup-marker-btn-start:hover svg path {
-    fill: var(--marker-start);
-}
-
-.popup-marker-btn-end:hover {
-    border-color: var(--marker-end);
-    color: var(--marker-end);
-}
-
-.popup-marker-btn-end:hover svg path {
-    fill: var(--marker-end);
-}
-
-.popup-marker-btn.active {
-    background: var(--m3-surface-container-high);
-}
-
-.popup-marker-btn-start.active {
-    border-color: var(--marker-start);
-    color: var(--marker-start);
-}
-
-.popup-marker-btn-end.active {
-    border-color: var(--marker-end);
-    color: var(--marker-end);
-}
-
 /* No Video State */
 .popup-no-video {
     display: flex;
@@ -324,8 +239,7 @@ body {
 .popup-container.no-video .popup-title,
 .popup-container.no-video .popup-controls,
 .popup-container.no-video .popup-progress-container,
-.popup-container.no-video .popup-speed,
-.popup-container.no-video .popup-markers {
+.popup-container.no-video .popup-speed {
     display: none;
 }
 

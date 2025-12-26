@@ -51,10 +51,6 @@
     --m3-error: #F2B8B5;
     --m3-on-error: #601410;
 
-    /* Lesson Markers */
-    --m3-marker-start: #A8DAB5;
-    --m3-marker-end: #F4B8B8;
-
     /* Dimensions */
     --m3-controls-height: 72px;
     --m3-shape-corner-full: 9999px;
@@ -204,6 +200,7 @@ body.bbb-enhancer-active #screenshare {
     display: flex;
     flex-direction: column;
     padding: 0 24px;
+    box-shadow: var(--m3-elevation-2);
     transition: transform var(--m3-motion-duration-medium2) var(--m3-motion-easing-emphasized),
         opacity var(--m3-motion-duration-medium2) var(--m3-motion-easing-emphasized);
 }
@@ -319,21 +316,40 @@ body.bbb-enhancer-active #screenshare {
     justify-content: space-between;
     height: 52px;
     gap: 4px;
+    position: relative;
 }
 
-/* Branding */
-.bbb-enhancer-branding {
+/* Branding & Video Title Container - CENTERED */
+.bbb-enhancer-branding-container {
     position: absolute;
     left: 50%;
-    bottom: 16px;
     transform: translateX(-50%);
-    font-size: 11px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    pointer-events: none;
+}
+
+.bbb-enhancer-branding {
+    font-size: 10px;
     font-weight: 500;
     letter-spacing: 2px;
     text-transform: lowercase;
     color: var(--m3-outline);
     opacity: 0.6;
-    pointer-events: none;
+    font-family: 'Google Sans', 'Roboto', sans-serif;
+    white-space: nowrap;
+}
+
+.bbb-enhancer-video-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--m3-on-surface);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 400px;
     font-family: 'Google Sans', 'Roboto', sans-serif;
 }
 
@@ -795,59 +811,6 @@ body.bbb-enhancer-active #screenshare {
 .bbb-enhancer-progress-bar:focus-visible {
     outline: 2px solid var(--m3-primary);
     outline-offset: 4px;
-}
-
-/* ============================================
-   LESSON MARKERS
-   ============================================ */
-.bbb-marker {
-    position: absolute;
-    top: -4px;
-    width: 4px;
-    height: 12px;
-    border-radius: 2px;
-    cursor: pointer;
-    z-index: 10;
-    transition: transform var(--m3-motion-duration-short3) var(--m3-motion-easing-standard);
-    transform: translateX(-50%);
-}
-
-.bbb-marker:hover {
-    transform: translateX(-50%) scaleY(1.4);
-}
-
-.bbb-marker-start {
-    background: var(--m3-marker-start);
-    box-shadow: 0 0 4px var(--m3-marker-start);
-}
-
-.bbb-marker-end {
-    background: var(--m3-marker-end);
-    box-shadow: 0 0 4px var(--m3-marker-end);
-}
-
-/* Marker tooltips */
-.bbb-marker::before {
-    content: attr(title);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--m3-inverse-surface);
-    color: var(--m3-inverse-on-surface);
-    padding: 4px 8px;
-    border-radius: var(--m3-shape-corner-sm);
-    font-size: 11px;
-    font-weight: 500;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity var(--m3-motion-duration-short3) var(--m3-motion-easing-standard);
-    margin-bottom: 8px;
-}
-
-.bbb-marker:hover::before {
-    opacity: 1;
 }
 
 /* ============================================

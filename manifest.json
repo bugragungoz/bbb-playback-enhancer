@@ -24,19 +24,20 @@
   "content_scripts": [
     {
       "matches": [
-        "*://*bbbv*.*/playback/*",
-        "*://*bbb*.*/playback/*",
         "*://*.bigbluebutton.org/playback/*",
         "*://*/playback/presentation/*"
       ],
-      "js": ["content.js"],
-      "css": ["styles.css"],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ],
       "run_at": "document_start"
     }
   ],
   "permissions": [],
   "host_permissions": [
-    "*://*bbb*/*",
-    "*://*.bigbluebutton.org/*"
+    "<all_urls>"
   ]
 }

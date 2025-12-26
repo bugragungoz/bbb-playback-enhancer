@@ -5,17 +5,18 @@ Browser extension for BigBlueButton playback pages. Provides modern media contro
 ## Features
 
 - YouTube-style media control interface
+- Material 3 pastel color theme (lavender, pink, teal)
 - Keyboard shortcuts for playback control
 - Variable playback speed (0.25x - 16x)
-- Popup media controls
-- Lesson start/end markers for skipping empty portions
+- Popup media controls (only active on BBB pages)
 - Progress bar with seek preview
 - Instant UI load (no flash of default interface)
+- Centered branding and video title display
 
 ## Installation
 
 1. Clone or download this repository
-2. Open `chrome://extensions` (Chrome/Edge) or `about:addons` (Firefox)
+2. Open `chrome://extensions` (Chrome/Edge/Brave) or `about:addons` (Firefox)
 3. Enable Developer mode
 4. Click "Load unpacked" and select the extension folder
 
@@ -32,21 +33,11 @@ Browser extension for BigBlueButton playback pages. Provides modern media contro
 | < / > | Decrease/Increase speed |
 | 0-9 | Seek to 0%-90% |
 
-## Lesson Markers
-
-Mark lesson start and end points to skip empty portions at the beginning and end of recordings:
-
-- Open popup menu by clicking extension icon
-- Click "Ders Başı" to mark where lesson content starts
-- Click "Ders Sonu" to mark where lesson content ends
-- Markers are saved per video URL in localStorage
-- Click on markers in progress bar to jump to that position
-
 ## Supported Sites
 
 The extension activates on BigBlueButton playback URLs:
 
-- `*://*bbb*.*/playback/*`
+- `*://bbb*/playback/*`
 - `*.bigbluebutton.org/playback/*`
 - `*/playback/presentation/*`
 
@@ -56,7 +47,7 @@ The extension activates on BigBlueButton playback URLs:
 - Content script injects custom UI over default BBB player
 - Service worker handles popup-content script communication
 - Material You (Material 3) pastel color theme
-- localStorage for persistent marker storage
+- Icons: Material Symbols movie icon
 
 ## Files
 
@@ -69,7 +60,6 @@ The extension activates on BigBlueButton playback URLs:
 ├── popup.js           # Popup logic
 ├── background.js      # Service worker
 └── icons/
-    ├── icon.svg       # Source icon
     ├── icon16.png
     ├── icon48.png
     └── icon128.png

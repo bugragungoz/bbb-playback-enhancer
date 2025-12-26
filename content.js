@@ -267,6 +267,38 @@
             this.elements = {};
         }
 
+        getVideoTitle() {
+            // Try different selectors for BBB video title
+            const selectors = [
+                '.recording-title',
+                '.vjs-title-bar-title',
+                'h1',
+                '.title',
+                '[class*="title"]',
+                'title'
+            ];
+
+            for (const selector of selectors) {
+                const el = document.querySelector(selector);
+                if (el) {
+                    const text = el.textContent || el.innerText;
+                    if (text && text.trim() && text.trim() !== 'Playback') {
+                        return text.trim().substring(0, 60); // Limit length
+                    }
+                }
+            }
+
+            // Fallback to document title, clean it up
+            let title = document.title || '';
+            title = title.replace(/- BigBlueButton/i, '').replace(/Playback/i, '').trim();
+
+            if (title) {
+                return title.substring(0, 60);
+            }
+
+            return 'Video';
+        }
+
         init() {
             this.hideOriginalElements();
             this.restructureLayout();
@@ -333,6 +365,9 @@
         }
 
         createControlBar() {
+            // Get video title from page
+            const videoTitle = this.getVideoTitle();
+
             const controlBar = document.createElement('div');
             controlBar.className = 'bbb-enhancer-controls';
             controlBar.innerHTML = `
@@ -344,8 +379,6 @@
                     </div>
                     <div class="bbb-enhancer-progress-tooltip">0:00</div>
                 </div>
-                
-                <div class="bbb-enhancer-branding">croxz</div>
                 
                 <div class="bbb-enhancer-controls-bottom">
                     <div class="bbb-enhancer-controls-left">
@@ -391,6 +424,11 @@
                             <span class="bbb-time-separator">/</span>
                             <span id="bbb-duration">0:00</span>
                         </div>
+                    </div>
+                    
+                    <div class="bbb-enhancer-branding-container">
+                        <span class="bbb-enhancer-branding">croxz</span>
+                        <span class="bbb-enhancer-video-title" id="bbb-video-title">${videoTitle}</span>
                     </div>
                     
                     <div class="bbb-enhancer-controls-right">
@@ -824,130 +862,10 @@
     }
 
     // ============================================
-    // LESSON MARKERS
-    // ============================================
-    class LessonMarkers {
-        constructor(videoController) {
-            this.video = videoController;
-            this.storageKey = `bbb-markers-${window.location.pathname}`;
-            this.markers = this.loadMarkers();
-            this.elements = {};
-        }
-
-        loadMarkers() {
-            try {
-                const saved = localStorage.getItem(this.storageKey);
-                return saved ? JSON.parse(saved) : { start: null, end: null };
-            } catch (e) {
-                return { start: null, end: null };
-            }
-        }
-
-        saveMarkers() {
-            try {
-                localStorage.setItem(this.storageKey, JSON.stringify(this.markers));
-            } catch (e) {
-                console.warn('[BBB Enhancer] Could not save markers:', e);
-            }
-        }
-
-        setStartMarker() {
-            this.markers.start = this.video.getCurrentTime();
-            this.saveMarkers();
-            this.updateUI();
-            return this.markers.start;
-        }
-
-        setEndMarker() {
-            this.markers.end = this.video.getCurrentTime();
-            this.saveMarkers();
-            this.updateUI();
-            return this.markers.end;
-        }
-
-        clearStartMarker() {
-            this.markers.start = null;
-            this.saveMarkers();
-            this.updateUI();
-        }
-
-        clearEndMarker() {
-            this.markers.end = null;
-            this.saveMarkers();
-            this.updateUI();
-        }
-
-        jumpToStart() {
-            if (this.markers.start !== null) {
-                this.video.setCurrentTime(this.markers.start);
-            }
-        }
-
-        jumpToEnd() {
-            if (this.markers.end !== null) {
-                this.video.setCurrentTime(this.markers.end);
-            }
-        }
-
-        createUI(progressBar) {
-            // Create start marker element
-            this.elements.startMarker = document.createElement('div');
-            this.elements.startMarker.className = 'bbb-marker bbb-marker-start';
-            this.elements.startMarker.title = 'Ders Başlangıcı';
-            this.elements.startMarker.style.display = 'none';
-            this.elements.startMarker.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.jumpToStart();
-            });
-
-            // Create end marker element
-            this.elements.endMarker = document.createElement('div');
-            this.elements.endMarker.className = 'bbb-marker bbb-marker-end';
-            this.elements.endMarker.title = 'Ders Bitişi';
-            this.elements.endMarker.style.display = 'none';
-            this.elements.endMarker.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.jumpToEnd();
-            });
-
-            progressBar.appendChild(this.elements.startMarker);
-            progressBar.appendChild(this.elements.endMarker);
-
-            this.updateUI();
-        }
-
-        updateUI() {
-            const duration = this.video.getDuration();
-            if (!duration || duration <= 0) return;
-
-            // Update start marker
-            if (this.markers.start !== null && this.elements.startMarker) {
-                const startPercent = (this.markers.start / duration) * 100;
-                this.elements.startMarker.style.left = `${startPercent}%`;
-                this.elements.startMarker.style.display = 'block';
-                this.elements.startMarker.title = `Ders Başı: ${formatTime(this.markers.start)}`;
-            } else if (this.elements.startMarker) {
-                this.elements.startMarker.style.display = 'none';
-            }
-
-            // Update end marker
-            if (this.markers.end !== null && this.elements.endMarker) {
-                const endPercent = (this.markers.end / duration) * 100;
-                this.elements.endMarker.style.left = `${endPercent}%`;
-                this.elements.endMarker.style.display = 'block';
-                this.elements.endMarker.title = `Ders Sonu: ${formatTime(this.markers.end)}`;
-            } else if (this.elements.endMarker) {
-                this.elements.endMarker.style.display = 'none';
-            }
-        }
-    }
-
-    // ============================================
     // INITIALIZATION
     // ============================================
     let videoController = null;
     let uiController = null;
-    let lessonMarkers = null;
 
     // Hide original BBB elements immediately (before DOM is fully loaded)
     const hideOriginalElementsEarly = () => {
@@ -978,16 +896,11 @@
             uiController = new UIController(videoController);
             uiController.init();
 
-            // Initialize lesson markers
-            lessonMarkers = new LessonMarkers(videoController);
-            lessonMarkers.createUI(uiController.elements.progressBar);
-
             // Update duration once loaded
             const updateDuration = () => {
                 const duration = videoController.getDuration();
                 if (duration > 0) {
                     document.getElementById('bbb-duration').textContent = formatTime(duration);
-                    lessonMarkers.updateUI();
                 }
             };
 
@@ -1014,6 +927,8 @@
 
             switch (message.action) {
                 case 'getState':
+                    // Get video title from UIController method
+                    const title = uiController ? uiController.getVideoTitle() : document.title;
                     sendResponse({
                         isPlaying: !videoController.isPaused(),
                         currentTime: videoController.getCurrentTime(),
@@ -1021,8 +936,7 @@
                         playbackRate: videoController.getPlaybackRate(),
                         volume: videoController.getVolume(),
                         muted: videoController.isMuted(),
-                        title: document.title,
-                        markers: lessonMarkers ? lessonMarkers.markers : { start: null, end: null }
+                        title: title
                     });
                     break;
 
@@ -1059,28 +973,6 @@
                 case 'toggleMute':
                     videoController.toggleMute();
                     sendResponse({ success: true });
-                    break;
-
-                case 'setMarker':
-                    if (lessonMarkers) {
-                        if (message.type === 'start') {
-                            lessonMarkers.setStartMarker();
-                        } else if (message.type === 'end') {
-                            lessonMarkers.setEndMarker();
-                        }
-                        sendResponse({ success: true, markers: lessonMarkers.markers });
-                    }
-                    break;
-
-                case 'jumpToMarker':
-                    if (lessonMarkers) {
-                        if (message.marker === 'start') {
-                            lessonMarkers.jumpToStart();
-                        } else if (message.marker === 'end') {
-                            lessonMarkers.jumpToEnd();
-                        }
-                        sendResponse({ success: true });
-                    }
                     break;
 
                 default:
