@@ -1,42 +1,42 @@
 /* BBB Playback Enhancer - Popup Styles */
-/* Anthropic Brand Theme — palette inspired by Anthropic's visual identity */
+/* Anthropic Brand Theme — exact brand palette */
 
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Lora:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Lora:ital,wght@0,400;0,500;1,400&display=swap');
 
+/* =============================================
+   ANTHROPIC DESIGN TOKENS — exact spec
+   Main:    #141413 | #faf9f5 | #b0aea5 | #e8e6dc
+   Accents: #d97757 | #6a9bcc | #788c5d
+   ============================================= */
 :root {
-    /* Anthropic Core Palette */
     --ant-dark: #141413;
     --ant-light: #faf9f5;
     --ant-mid-gray: #b0aea5;
     --ant-light-gray: #e8e6dc;
-
-    /* Anthropic Accent Colors */
     --ant-orange: #d97757;
-    /* primary action */
     --ant-blue: #6a9bcc;
-    /* secondary */
     --ant-green: #788c5d;
-    /* tertiary */
 
-    /* Surface tokens (dark UI) */
-    --m3-surface: #1a1916;
-    --m3-surface-container: #222120;
-    --m3-surface-container-high: #2c2b28;
-    --m3-surface-container-highest: #363530;
-    --m3-on-surface: #f0efe9;
-    --m3-on-surface-variant: #b0aea5;
-    --m3-outline: #6b6a64;
-    --m3-outline-variant: #38372f;
+    /* Dark-UI surface ladder (derived from #141413 warm base) */
+    --s-0: #141413;
+    /* page background */
+    --s-1: #1c1b19;
+    /* cards / panels */
+    --s-2: #242320;
+    /* inputs / hover */
+    --s-3: #2d2c28;
+    /* active / highest */
+    --border: #38372e;
+    /* dividers */
 
-    /* Primary = orange */
-    --m3-primary: var(--ant-orange);
-    --m3-on-primary: var(--ant-light);
-    --m3-primary-container: #3d2215;
-    --m3-on-primary-container: #f5bfaa;
+    /* Text */
+    --text-prominent: #faf9f5;
+    --text-secondary: #b0aea5;
+    --text-muted: #6b6960;
 
-    /* Secondary = blue */
-    --m3-secondary-container: #1c2e3d;
-    --m3-on-secondary-container: #a8cce8;
+    /* Accent helpers */
+    --orange-dim: rgba(217, 119, 87, 0.15);
+    --orange-mid: rgba(217, 119, 87, 0.30);
 }
 
 * {
@@ -47,19 +47,25 @@
 
 body {
     font-family: 'Lora', Georgia, serif;
-    background: var(--m3-surface);
-    color: var(--m3-on-surface);
+    background: var(--s-0);
+    color: var(--text-prominent);
     min-width: 400px;
+    -webkit-font-smoothing: antialiased;
 }
 
+/* =============================================
+   POPUP CONTAINER
+   ============================================= */
 .popup-container {
-    padding: 16px;
+    padding: 14px 16px;
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-/* Header */
+/* =============================================
+   HEADER
+   ============================================= */
 .popup-header {
     display: flex;
     align-items: center;
@@ -71,26 +77,30 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 11px;
     font-family: 'Poppins', Arial, sans-serif;
-    color: var(--m3-on-surface-variant);
-    background: var(--m3-surface-container);
-    padding: 5px 10px;
-    border-radius: 6px;
-    border: 1px solid var(--m3-outline-variant);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: var(--s-1);
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    letter-spacing: 0.2px;
 }
 
 .popup-icon {
-    opacity: 0.6;
+    opacity: 0.55;
 }
 
-/* Video Title */
+/* =============================================
+   VIDEO TITLE
+   ============================================= */
 .popup-title {
     font-family: 'Poppins', Arial, sans-serif;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
-    color: var(--m3-on-surface);
-    line-height: 1.4;
+    color: var(--text-prominent);
+    line-height: 1.45;
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
@@ -98,16 +108,18 @@ body {
     line-clamp: 2;
     -webkit-box-orient: vertical;
     padding: 8px 0;
-    border-bottom: 1px solid var(--m3-outline-variant);
+    border-bottom: 1px solid var(--border);
 }
 
-/* Controls */
+/* =============================================
+   CONTROLS
+   ============================================= */
 .popup-controls {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 16px;
-    padding: 8px 0;
+    gap: 12px;
+    padding: 6px 0;
 }
 
 .popup-btn {
@@ -117,40 +129,46 @@ body {
     background: transparent;
     border: none;
     cursor: pointer;
-    color: var(--m3-on-surface);
-    border-radius: 6px;
-    transition: background 0.15s, transform 0.1s;
+    color: var(--text-prominent);
+    border-radius: 4px;
+    transition: background 0.15s, transform 0.1s, color 0.15s;
 }
 
 .popup-btn:hover {
-    background: var(--m3-surface-container-high);
+    background: var(--s-2);
 }
 
 .popup-btn:active {
-    transform: scale(0.95);
+    transform: scale(0.94);
 }
 
 .popup-btn-seek {
-    width: 44px;
-    height: 44px;
-    color: var(--m3-on-surface-variant);
+    width: 42px;
+    height: 42px;
+    color: var(--text-secondary);
+}
+
+.popup-btn-seek:hover {
+    color: var(--ant-orange);
 }
 
 .popup-btn-play {
-    width: 60px;
-    height: 60px;
-    background: var(--m3-primary-container);
+    width: 56px;
+    height: 56px;
+    background: var(--orange-dim);
     color: var(--ant-orange);
-    border: 1px solid rgba(217, 119, 87, 0.25);
-    border-radius: 8px;
+    border: 1px solid var(--orange-mid);
+    border-radius: 6px;
 }
 
 .popup-btn-play:hover {
-    background: #4a2919;
+    background: var(--orange-mid);
     color: var(--ant-orange);
 }
 
-/* Progress */
+/* =============================================
+   PROGRESS BAR
+   ============================================= */
 .popup-progress-container {
     display: flex;
     flex-direction: column;
@@ -159,10 +177,15 @@ body {
 
 .popup-progress-bar {
     position: relative;
-    height: 5px;
-    background: var(--m3-surface-container-highest);
+    height: 4px;
+    background: var(--s-3);
     border-radius: 2px;
     cursor: pointer;
+    transition: height 0.15s;
+}
+
+.popup-progress-bar:hover {
+    height: 6px;
 }
 
 .popup-progress-played {
@@ -183,72 +206,88 @@ body {
     gap: 4px;
     font-family: 'Poppins', Arial, sans-serif;
     font-size: 11px;
-    color: var(--m3-on-surface-variant);
+    color: var(--text-secondary);
     font-variant-numeric: tabular-nums;
+    letter-spacing: 0.3px;
 }
 
 .popup-time-sep {
-    color: var(--m3-outline);
+    color: var(--text-muted);
 }
 
-/* Speed Control */
+/* =============================================
+   SPEED CONTROL
+   ============================================= */
 .popup-speed {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 0;
-    border-top: 1px solid var(--m3-outline-variant);
+    padding: 8px 0 2px;
+    border-top: 1px solid var(--border);
 }
 
 .popup-speed-label {
     font-family: 'Poppins', Arial, sans-serif;
-    font-size: 11px;
-    color: var(--m3-on-surface-variant);
-    font-weight: 500;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--text-muted);
 }
 
 .popup-speed-select {
     flex: 1;
-    background: var(--m3-surface-container-high);
-    color: var(--m3-on-surface);
-    border: 1px solid var(--m3-outline-variant);
-    border-radius: 6px;
-    padding: 7px 12px;
+    background: var(--s-1);
+    color: var(--text-prominent);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 10px;
     font-size: 12px;
     font-family: 'Poppins', Arial, sans-serif;
     cursor: pointer;
     outline: none;
     transition: border-color 0.15s;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.popup-speed-select:hover {
+    border-color: var(--ant-mid-gray);
 }
 
 .popup-speed-select:focus {
     border-color: var(--ant-orange);
+    outline: none;
 }
 
 .popup-speed-select option {
-    background: var(--m3-surface-container);
-    color: var(--m3-on-surface);
+    background: var(--s-1);
+    color: var(--text-prominent);
 }
 
-/* No Video State */
+/* =============================================
+   NO VIDEO STATE
+   ============================================= */
 .popup-no-video {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    padding: 32px 16px;
-    color: var(--m3-on-surface-variant);
+    gap: 10px;
+    padding: 28px 16px;
+    color: var(--text-secondary);
     text-align: center;
 }
 
 .popup-no-video svg {
-    opacity: 0.4;
+    opacity: 0.35;
+    color: var(--ant-mid-gray);
 }
 
 .popup-no-video p {
-    font-size: 13px;
     font-family: 'Poppins', Arial, sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.2px;
 }
 
 /* Hide main content when no video */
@@ -264,55 +303,60 @@ body {
     display: flex !important;
 }
 
-/* ===== TAB SWITCHER ===== */
+/* =============================================
+   TAB SWITCHER
+   ============================================= */
 .tab-switcher {
     display: flex;
-    gap: 3px;
-    background: var(--m3-surface-container);
-    border-radius: 7px;
+    gap: 2px;
+    background: var(--s-1);
+    border-radius: 5px;
     padding: 3px;
-    border: 1px solid var(--m3-outline-variant);
+    border: 1px solid var(--border);
 }
 
 .tab-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 28px;
+    width: 30px;
+    height: 26px;
     border: none;
-    border-radius: 5px;
+    border-radius: 3px;
     background: transparent;
-    color: var(--m3-on-surface-variant);
+    color: var(--text-muted);
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
 }
 
 .tab-btn.active {
-    background: var(--m3-primary-container);
+    background: var(--orange-dim);
     color: var(--ant-orange);
+    border: 1px solid var(--orange-mid);
 }
 
 .tab-btn:hover:not(.active) {
-    background: var(--m3-surface-container-high);
-    color: var(--m3-on-surface);
+    background: var(--s-2);
+    color: var(--text-prominent);
 }
 
-/* ===== PROGRESS SECTION ===== */
+/* =============================================
+   PROGRESS SECTION (download progress)
+   ============================================= */
 .dl-progress-section {
     display: flex;
     flex-direction: column;
     gap: 6px;
     padding: 10px 0 4px;
-    border-top: 1px solid var(--m3-outline-variant);
+    border-top: 1px solid var(--border);
 }
 
 .dl-phase {
     font-family: 'Poppins', Arial, sans-serif;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
-    color: var(--m3-on-surface);
-    letter-spacing: 0.3px;
+    color: var(--text-secondary);
+    letter-spacing: 0.6px;
     text-transform: uppercase;
 }
 
@@ -324,8 +368,8 @@ body {
 
 .dl-bar {
     flex: 1;
-    height: 5px;
-    background: var(--m3-surface-container-highest);
+    height: 4px;
+    background: var(--s-3);
     border-radius: 2px;
     overflow: hidden;
 }
@@ -341,39 +385,41 @@ body {
 .dl-pct {
     font-family: 'Poppins', Arial, sans-serif;
     font-size: 11px;
-    color: var(--m3-on-surface-variant);
+    color: var(--text-secondary);
     font-variant-numeric: tabular-nums;
-    min-width: 36px;
+    min-width: 34px;
     text-align: right;
 }
 
 .dl-fps {
     font-size: 10px;
-    color: var(--m3-outline);
+    color: var(--text-muted);
     font-family: 'Consolas', 'Courier New', monospace;
     min-height: 14px;
 }
 
-/* ===== DOWNLOAD PANEL ===== */
+/* =============================================
+   DOWNLOAD PANEL
+   ============================================= */
 .dl-section {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding-top: 4px;
+    padding-top: 2px;
 }
 
 .dl-field {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
 }
 
 .dl-label {
     font-family: 'Poppins', Arial, sans-serif;
     font-size: 10px;
-    color: var(--m3-on-surface-variant);
+    color: var(--text-muted);
     font-weight: 600;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.6px;
     text-transform: uppercase;
 }
 
@@ -385,10 +431,10 @@ body {
 
 .dl-input {
     flex: 1;
-    background: var(--m3-surface-container-high);
-    color: var(--m3-on-surface);
-    border: 1px solid var(--m3-outline-variant);
-    border-radius: 6px;
+    background: var(--s-1);
+    color: var(--text-prominent);
+    border: 1px solid var(--border);
+    border-radius: 4px;
     padding: 8px 10px;
     font-size: 12px;
     font-family: 'Lora', Georgia, serif;
@@ -397,12 +443,16 @@ body {
     min-width: 0;
 }
 
+.dl-input:hover {
+    border-color: var(--ant-mid-gray);
+}
+
 .dl-input:focus {
     border-color: var(--ant-orange);
 }
 
 .dl-input::placeholder {
-    color: var(--m3-outline);
+    color: var(--text-muted);
     font-size: 11px;
 }
 
@@ -410,45 +460,45 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
-    background: var(--m3-surface-container-high);
-    border: 1px solid var(--m3-outline-variant);
-    border-radius: 6px;
-    color: var(--m3-on-surface-variant);
+    width: 34px;
+    height: 34px;
+    background: var(--s-1);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-secondary);
     cursor: pointer;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    transition: all 0.15s;
     flex-shrink: 0;
 }
 
 .dl-icon-btn:hover {
-    background: var(--m3-primary-container);
+    background: var(--orange-dim);
     color: var(--ant-orange);
-    border-color: rgba(217, 119, 87, 0.3);
+    border-color: var(--orange-mid);
 }
 
-/* Download button */
+/* ---- Download Button ---- */
 .dl-btn {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
     width: 100%;
-    padding: 11px 16px;
+    padding: 10px 16px;
     background: var(--ant-orange);
     color: var(--ant-light);
     border: none;
-    border-radius: 8px;
+    border-radius: 5px;
     font-family: 'Poppins', Arial, sans-serif;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.15s, transform 0.1s, opacity 0.15s;
     letter-spacing: 0.2px;
+    transition: background 0.15s, transform 0.1s, opacity 0.15s;
 }
 
 .dl-btn:hover {
-    background: #c06445;
+    background: #c86943;
 }
 
 .dl-btn:active {
@@ -456,7 +506,7 @@ body {
 }
 
 .dl-btn:disabled {
-    opacity: 0.45;
+    opacity: 0.4;
     cursor: not-allowed;
 }
 
@@ -481,27 +531,27 @@ body {
     align-items: center;
 }
 
-/* Log area */
+/* ---- Log Area ---- */
 .dl-log-wrap {
     display: flex;
     flex-direction: column;
-    border: 1px solid var(--m3-outline-variant);
-    border-radius: 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
     overflow: hidden;
 }
 
 .dl-log-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     padding: 5px 10px;
-    background: var(--m3-surface-container);
+    background: var(--s-1);
     font-family: 'Poppins', Arial, sans-serif;
     font-size: 10px;
-    color: var(--m3-on-surface-variant);
+    color: var(--text-muted);
     font-weight: 600;
-    letter-spacing: 0.4px;
+    letter-spacing: 0.5px;
     text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
 }
 
 .dl-log {
@@ -510,13 +560,13 @@ body {
     padding: 8px 10px;
     font-size: 11px;
     font-family: 'Consolas', 'Courier New', monospace;
-    color: var(--m3-on-surface-variant);
-    background: var(--m3-surface);
+    color: var(--text-secondary);
+    background: var(--s-0);
     white-space: pre-wrap;
     word-break: break-all;
-    line-height: 1.5;
+    line-height: 1.55;
     scrollbar-width: thin;
-    scrollbar-color: var(--m3-outline-variant) transparent;
+    scrollbar-color: var(--border) transparent;
 }
 
 .dl-log::-webkit-scrollbar {
@@ -524,30 +574,27 @@ body {
 }
 
 .dl-log::-webkit-scrollbar-thumb {
-    background: var(--m3-outline-variant);
+    background: var(--border);
     border-radius: 2px;
 }
 
-/* Notice */
+/* ---- Notice ---- */
 .dl-notice {
     display: flex;
     align-items: flex-start;
     gap: 7px;
-    background: #2c1a10;
+    background: var(--orange-dim);
     color: #f5bfaa;
-    border: 1px solid rgba(217, 119, 87, 0.25);
-    border-radius: 6px;
+    border: 1px solid var(--orange-mid);
+    border-radius: 4px;
     padding: 8px 10px;
     font-size: 11px;
     font-family: 'Lora', Georgia, serif;
-    line-height: 1.5;
+    line-height: 1.55;
 }
 
-/* Unused but kept for legacy */
-.dl-preset-badge {
-    display: none;
-}
-
+/* Legacy stubs */
+.dl-preset-badge,
 .dl-log-clear {
     display: none;
 }

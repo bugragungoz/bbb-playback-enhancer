@@ -19,26 +19,26 @@
     /* Surface (dark UI) */
     --m3-primary: #d97757;
     --m3-on-primary: #faf9f5;
-    --m3-primary-container: #3d2215;
+    --m3-primary-container: rgba(217, 119, 87, 0.14);
     --m3-on-primary-container: #f5bfaa;
 
     --m3-secondary: #6a9bcc;
     --m3-secondary-container: #1c2e3d;
     --m3-on-secondary-container: #a8cce8;
 
-    --m3-surface: #1a1916;
-    --m3-surface-dim: #1a1916;
-    --m3-surface-bright: #363530;
-    --m3-surface-container-lowest: #0f0e0d;
-    --m3-surface-container-low: #1e1d1b;
-    --m3-surface-container: #222120;
-    --m3-surface-container-high: #2c2b28;
-    --m3-surface-container-highest: #363530;
+    --m3-surface: #141413;
+    --m3-surface-dim: #141413;
+    --m3-surface-bright: #2e2d2a;
+    --m3-surface-container-lowest: #0e0e0d;
+    --m3-surface-container-low: #1c1b19;
+    --m3-surface-container: #1c1b19;
+    --m3-surface-container-high: #252422;
+    --m3-surface-container-highest: #2e2d2a;
 
-    --m3-on-surface: #f0efe9;
+    --m3-on-surface: #faf9f5;
     --m3-on-surface-variant: #b0aea5;
-    --m3-outline: #6b6a64;
-    --m3-outline-variant: #38372f;
+    --m3-outline: #6b6960;
+    --m3-outline-variant: #38372e;
 
     --m3-inverse-surface: #e8e6dc;
     --m3-inverse-on-surface: #2a2925;
@@ -47,13 +47,13 @@
     --m3-error: #e8826e;
     --m3-on-error: #3d0f08;
 
-    /* Dimensions */
+    /* Dimensions — flatter, editorial */
     --m3-controls-height: 72px;
     --m3-shape-corner-full: 9999px;
-    --m3-shape-corner-xl: 16px;
-    --m3-shape-corner-lg: 10px;
-    --m3-shape-corner-md: 8px;
-    --m3-shape-corner-sm: 6px;
+    --m3-shape-corner-xl: 8px;
+    --m3-shape-corner-lg: 6px;
+    --m3-shape-corner-md: 5px;
+    --m3-shape-corner-sm: 4px;
 
     /* Motion */
     --m3-motion-duration-short1: 50ms;
@@ -96,6 +96,7 @@ body.bbb-enhancer-active {
     background: var(--m3-surface) !important;
     overflow: hidden;
     font-family: 'Lora', Georgia, serif;
+    -webkit-font-smoothing: antialiased;
 }
 
 body.bbb-enhancer-active .player-wrapper,
@@ -328,12 +329,12 @@ body.bbb-enhancer-active #screenshare {
 }
 
 .bbb-enhancer-branding {
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 600;
-    letter-spacing: 2.5px;
+    letter-spacing: 3px;
     text-transform: lowercase;
     color: var(--m3-outline);
-    opacity: 0.5;
+    opacity: 0.45;
     font-family: 'Poppins', Arial, sans-serif;
     white-space: nowrap;
 }
@@ -347,6 +348,7 @@ body.bbb-enhancer-active #screenshare {
     text-overflow: ellipsis;
     max-width: 400px;
     font-family: 'Poppins', Arial, sans-serif;
+    letter-spacing: 0.1px;
 }
 
 .bbb-enhancer-controls-left,
@@ -409,12 +411,13 @@ body.bbb-enhancer-active #screenshare {
 
 /* Play button - filled tonal style */
 .bbb-enhancer-btn-play {
-    background: var(--m3-primary-container);
+    background: rgba(217, 119, 87, 0.14);
     color: var(--ant-orange);
     width: 56px;
     height: 56px;
     margin-right: 8px;
     border-radius: var(--m3-shape-corner-md);
+    border: 1px solid rgba(217, 119, 87, 0.28);
 }
 
 .bbb-enhancer-btn-play::before {
@@ -443,12 +446,12 @@ body.bbb-enhancer-active #screenshare {
 /* Rate button - text style */
 .bbb-enhancer-rate-btn {
     min-width: auto;
-    padding: 0 16px;
-    height: 40px;
-    font-size: 13px;
+    padding: 0 14px;
+    height: 36px;
+    font-size: 12px;
     font-weight: 600;
     font-family: 'Poppins', Arial, sans-serif;
-    letter-spacing: 0.1px;
+    letter-spacing: 0.2px;
     color: var(--ant-orange);
     background: transparent;
     border-radius: var(--m3-shape-corner-sm);
@@ -535,7 +538,7 @@ body.bbb-enhancer-active #screenshare {
 
 .bbb-enhancer-rate-menu-item.active::after {
     content: '✓';
-    font-size: 16px;
+    font-size: 15px;
     color: var(--ant-orange);
 }
 
@@ -592,11 +595,11 @@ body.bbb-enhancer-active #screenshare {
 .bbb-enhancer-volume-slider input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 20px;
-    height: 20px;
-    margin-top: -8px;
-    background: var(--m3-primary);
-    border-radius: var(--m3-shape-corner-full);
+    width: 16px;
+    height: 16px;
+    margin-top: -6px;
+    background: var(--ant-orange);
+    border-radius: 50%;
     cursor: pointer;
     box-shadow: var(--m3-elevation-1);
     transition: transform var(--m3-motion-duration-short3) var(--m3-motion-easing-standard);
@@ -607,10 +610,10 @@ body.bbb-enhancer-active #screenshare {
 }
 
 .bbb-enhancer-volume-slider input[type="range"]::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    background: var(--m3-primary);
-    border-radius: var(--m3-shape-corner-full);
+    width: 16px;
+    height: 16px;
+    background: var(--ant-orange);
+    border-radius: 50%;
     cursor: pointer;
     border: none;
     box-shadow: var(--m3-elevation-1);
