@@ -93,6 +93,8 @@ After setup, reload the extension in the browser (click the reload icon).
 
 The download feature uses **[bbb-dl](https://github.com/C0D3D3V/bbb-dl)** by [C0D3D3V](https://github.com/C0D3D3V) — a powerful tool for downloading BigBlueButton recordings. This extension provides a browser-integrated UI on top of it via Chrome Native Messaging.
 
+The extension UI is designed using the **[Anthropic brand palette](https://anthropic.com)** — dark `#141413`, cream `#faf9f5`, and orange accent `#d97757` — with Poppins and Lora typography. The palette is used purely as a design inspiration for this open-source project and is not affiliated with or endorsed by Anthropic.
+
 ## License
 
 MIT
