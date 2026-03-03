@@ -20,7 +20,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     // ---- Download tab trigger (from content script download button) ----
     if (message.action === 'openDownloadTab') {
+        // Store flag so popup switches to Download tab on open
         chrome.storage.session.set({ openDownloadTab: true }).catch(() => { });
+        // Open the popup programmatically (Chrome/Brave 127+)
+        if (chrome.action && chrome.action.openPopup) {
+            chrome.action.openPopup().catch(() => { });
+        }
         sendResponse({ ok: true });
         return true;
     }
