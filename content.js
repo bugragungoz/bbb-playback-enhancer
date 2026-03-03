@@ -588,9 +588,23 @@
             });
 
             // Download button — open popup Download tab
+            let dlClickedAt = 0;
             this.elements.downloadBtn.addEventListener('click', () => {
-                chrome.runtime.sendMessage({ action: 'openDownloadTab' })
-                    .catch(() => { });
+                const now = Date.now();
+                const isRetry = (now - dlClickedAt) < 3000;
+                dlClickedAt = now;
+
+                chrome.runtime.sendMessage({ action: 'openDownloadTab' }).catch(() => { });
+
+                if (isRetry) {
+                    // Popup didn't auto-open; show fallback hint
+                    this.showDownloadToast(
+                        'Auto-open failed. Click the extension icon manually.',
+                        'Requires Chromium 127+ (your browser may be older).'
+                    );
+                } else {
+                    this.showDownloadToast('Opening download panel\u2026', '', 1800);
+                }
             });
 
             // Progress bar - click and drag support
@@ -834,6 +848,31 @@
                 fsIcon.style.display = '';
                 fsExitIcon.style.display = 'none';
             }
+        }
+
+        showDownloadToast(line1, line2 = '', duration = 5000) {
+            let toast = document.getElementById('bbb-dl-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'bbb-dl-toast';
+                toast.style.cssText = [
+                    'position:fixed', 'bottom:64px', 'left:50%', 'transform:translateX(-50%)',
+                    'background:rgba(30,30,40,0.96)', 'color:#e8e8f0', 'border-radius:8px',
+                    'padding:8px 14px', 'font-size:12px', 'font-family:inherit', 'z-index:2147483647',
+                    'box-shadow:0 4px 16px rgba(0,0,0,0.5)', 'border:1px solid rgba(120,100,220,0.35)',
+                    'text-align:center', 'line-height:1.5', 'max-width:320px', 'pointer-events:none',
+                    'transition:opacity 0.3s'
+                ].join(';');
+                document.body.appendChild(toast);
+            }
+
+            toast.innerHTML = line1 + (line2 ? `<br><span style="opacity:0.6;font-size:11px">${line2}</span>` : '');
+            toast.style.opacity = '1';
+
+            clearTimeout(toast._hideTimer);
+            toast._hideTimer = setTimeout(() => {
+                toast.style.opacity = '0';
+            }, duration);
         }
 
         showSeekIndicator(direction) {
