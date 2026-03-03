@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BBB Playback Enhancer",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "BigBlueButton playback pages için modern medya kontrol arayüzü",
   "author": "Bugra",
   "icons": {
@@ -36,7 +36,11 @@
       "run_at": "document_start"
     }
   ],
-  "permissions": ["nativeMessaging", "downloads"],
+  "permissions": [
+    "nativeMessaging",
+    "downloads",
+    "storage"
+  ],
   "host_permissions": [
     "<all_urls>"
   ]

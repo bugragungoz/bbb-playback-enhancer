@@ -118,6 +118,8 @@ class DownloadController {
     constructor() {
         this.isDownloading = false;
         this.currentTabUrl = '';
+        this.simTimer = null;       // simulated progress timer
+        this.simPct = 0;            // current simulated %
         this.init();
     }
 
@@ -162,20 +164,44 @@ class DownloadController {
             this.updateProgress(data);
 
         } else if (data.type === 'done') {
+            this.stopSimProgress(true);
             this.setDownloading(false);
             this.appendLog(data.text || '');
             if (data.success) {
                 this.showNotice(data.text, 'success');
                 this.setPhase('Download complete');
-                this.setProgressBar(100);
             } else {
+                this.stopSimProgress(false);
                 this.setPhase('Failed');
             }
 
         } else if (data.type === 'error') {
             this.setDownloading(false);
             this.appendLog('Error: ' + (data.text || ''));
+
         }
+    }
+
+    startSimProgress() {
+        this.stopSimProgress(false);
+        this.simPct = 0;
+        let step = 0;
+        // ~240s / 0.8s per tick = 300 ticks to reach 99%
+        const STEPS = 300;
+        this.simTimer = setInterval(() => {
+            step++;
+            const eased = Math.sqrt(step / STEPS);         // sqrt easing: fast then slow
+            this.simPct = Math.min(99, Math.round(eased * 99));
+            this.setProgressBar(this.simPct);
+        }, 800);
+    }
+
+    stopSimProgress(snapTo100 = false) {
+        if (this.simTimer) {
+            clearInterval(this.simTimer);
+            this.simTimer = null;
+        }
+        if (snapTo100) this.setProgressBar(100);
     }
 
     setPhase(text) {
@@ -248,11 +274,13 @@ class DownloadController {
         this.setDownloading(true);
 
         // Reset progress UI
+        this.stopSimProgress(false);
         this.setProgressBar(0);
         this.setPhase('Starting...');
         document.getElementById('dl-fps').textContent = '';
         document.getElementById('dl-log').textContent = '';
         document.getElementById('dl-log-wrap').style.display = 'none';
+        this.startSimProgress();   // begin simulated fill
 
         try {
             const flags = this.getPresetFlags();
@@ -294,7 +322,20 @@ class DownloadController {
 // ===== TAB SWITCHER =====
 
 class TabManager {
-    constructor() { this.bindTabs(); }
+    constructor() { this.init(); }
+
+    async init() {
+        this.bindTabs();
+        // If content-script download button was pressed, open directly on Download tab
+        try {
+            const result = await chrome.storage.session.get('openDownloadTab');
+            if (result && result.openDownloadTab) {
+                this.switchTo('download');
+                await chrome.storage.session.remove('openDownloadTab');
+            }
+        } catch (e) { /* storage unavailable, ignore */ }
+    }
+
     bindTabs() {
         document.getElementById('tab-control').addEventListener('click', () => this.switchTo('control'));
         document.getElementById('tab-download').addEventListener('click', () => this.switchTo('download'));

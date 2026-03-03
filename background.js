@@ -18,6 +18,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
 
+    // ---- Download tab trigger (from content script download button) ----
+    if (message.action === 'openDownloadTab') {
+        chrome.storage.session.set({ openDownloadTab: true }).catch(() => { });
+        sendResponse({ ok: true });
+        return true;
+    }
+
     // ---- New: Start BBB-DL download ----
     if (message.action === 'startDownload') {
         const { url, outputDir, flags } = message;

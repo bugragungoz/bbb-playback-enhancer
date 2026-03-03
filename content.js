@@ -451,6 +451,12 @@
                                 <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
                             </svg>
                         </button>
+
+                        <button class="bbb-enhancer-btn" id="bbb-download-btn" title="Download Recording">
+                            <svg class="bbb-icon" viewBox="0 0 24 24">
+                                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                            </svg>
+                        </button>
                     </div>
                 </div>
             `;
@@ -475,6 +481,7 @@
             this.elements.progressTooltip = controlBar.querySelector('.bbb-enhancer-progress-tooltip');
             this.elements.rateMenu = document.getElementById('bbb-rate-menu');
             this.elements.rateMenuItems = document.getElementById('bbb-rate-menu-items');
+            this.elements.downloadBtn = document.getElementById('bbb-download-btn');
 
             // Populate rate menu
             this.populateRateMenu();
@@ -578,6 +585,12 @@
             // Fullscreen
             this.elements.fullscreenBtn.addEventListener('click', () => {
                 this.video.toggleFullscreen();
+            });
+
+            // Download button — open popup Download tab
+            this.elements.downloadBtn.addEventListener('click', () => {
+                chrome.runtime.sendMessage({ action: 'openDownloadTab' })
+                    .catch(() => { });
             });
 
             // Progress bar - click and drag support
