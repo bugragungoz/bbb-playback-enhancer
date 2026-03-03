@@ -95,6 +95,10 @@ The download feature uses **[bbb-dl](https://github.com/C0D3D3V/bbb-dl)** by [C0
 
 The extension UI is designed using the **[Anthropic brand palette](https://anthropic.com)** — dark `#141413`, cream `#faf9f5`, and orange accent `#d97757` — with Poppins and Lora typography. The palette is used purely as a design inspiration for this open-source project and is not affiliated with or endorsed by Anthropic.
 
+## AI Assistance
+
+This script was developed with assistance from Claude 4.6 Sonnet.
+
 ## License
 
 MIT
