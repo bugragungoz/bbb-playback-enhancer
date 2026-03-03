@@ -39,7 +39,7 @@ body {
     font-family: 'Segoe UI', 'Roboto', sans-serif;
     background: var(--m3-surface);
     color: var(--m3-on-surface);
-    min-width: 320px;
+    min-width: 400px;
 }
 
 .popup-container {
@@ -53,6 +53,7 @@ body {
 .popup-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 8px;
 }
 
@@ -245,4 +246,296 @@ body {
 
 .popup-container.no-video .popup-no-video {
     display: flex !important;
+}
+
+/* ===== TAB SWITCHER ===== */
+.tab-switcher {
+    display: flex;
+    gap: 4px;
+    background: var(--m3-surface-container);
+    border-radius: 12px;
+    padding: 3px;
+}
+
+.tab-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 28px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--m3-on-surface-variant);
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+}
+
+.tab-btn.active {
+    background: var(--m3-secondary-container);
+    color: var(--m3-on-secondary-container);
+}
+
+.tab-btn:hover:not(.active) {
+    background: var(--m3-surface-container-high);
+    color: var(--m3-on-surface);
+}
+
+/* ===== PROGRESS SECTION ===== */
+.dl-progress-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 0 4px;
+    border-top: 1px solid var(--m3-outline-variant);
+}
+
+.dl-phase {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--m3-on-surface);
+    letter-spacing: 0.2px;
+}
+
+.dl-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dl-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--m3-surface-container-highest);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.dl-bar-fill {
+    height: 100%;
+    background: var(--m3-primary);
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.dl-pct {
+    font-size: 11px;
+    color: var(--m3-on-surface-variant);
+    font-variant-numeric: tabular-nums;
+    min-width: 36px;
+    text-align: right;
+}
+
+.dl-fps {
+    font-size: 10px;
+    color: var(--m3-outline);
+    font-family: 'Consolas', 'Courier New', monospace;
+    min-height: 14px;
+}
+
+/* ===== DOWNLOAD PANEL ===== */
+.dl-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 4px;
+}
+
+.dl-preset-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--m3-primary-container);
+    color: var(--m3-on-primary-container);
+    border-radius: 10px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.dl-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dl-label {
+    font-size: 11px;
+    color: var(--m3-on-surface-variant);
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.dl-input-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.dl-input {
+    flex: 1;
+    background: var(--m3-surface-container-high);
+    color: var(--m3-on-surface);
+    border: 1px solid var(--m3-outline-variant);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.18s;
+    min-width: 0;
+}
+
+.dl-input:focus {
+    border-color: var(--m3-primary);
+}
+
+.dl-input::placeholder {
+    color: var(--m3-outline);
+    font-size: 11px;
+}
+
+.dl-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--m3-surface-container-high);
+    border: 1px solid var(--m3-outline-variant);
+    border-radius: 8px;
+    color: var(--m3-on-surface-variant);
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+    flex-shrink: 0;
+}
+
+.dl-icon-btn:hover {
+    background: var(--m3-primary-container);
+    color: var(--m3-on-primary-container);
+}
+
+.dl-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 11px 16px;
+    background: var(--m3-primary-container);
+    color: var(--m3-on-primary-container);
+    border: none;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s, transform 0.1s, opacity 0.18s;
+}
+
+.dl-btn:hover {
+    background: var(--m3-secondary-container);
+    color: var(--m3-on-secondary-container);
+}
+
+.dl-btn:active {
+    transform: scale(0.98);
+}
+
+.dl-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.dl-btn-icon {
+    display: flex;
+    align-items: center;
+}
+
+/* Spinner animation */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spin {
+    animation: spin 0.9s linear infinite;
+}
+
+.dl-spinner {
+    display: flex;
+    align-items: center;
+}
+
+/* Log area */
+.dl-log-wrap {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--m3-outline-variant);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.dl-log-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 10px;
+    background: var(--m3-surface-container);
+    font-size: 11px;
+    color: var(--m3-on-surface-variant);
+    font-weight: 500;
+}
+
+.dl-log-clear {
+    background: transparent;
+    border: none;
+    color: var(--m3-outline);
+    font-size: 11px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background 0.15s;
+}
+
+.dl-log-clear:hover {
+    background: var(--m3-surface-container-high);
+    color: var(--m3-on-surface);
+}
+
+.dl-log {
+    max-height: 140px;
+    overflow-y: auto;
+    padding: 8px 10px;
+    font-size: 11px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    color: var(--m3-on-surface-variant);
+    background: var(--m3-surface);
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.5;
+    scrollbar-width: thin;
+    scrollbar-color: var(--m3-outline-variant) transparent;
+}
+
+.dl-log::-webkit-scrollbar {
+    width: 4px;
+}
+
+.dl-log::-webkit-scrollbar-thumb {
+    background: var(--m3-outline-variant);
+    border-radius: 2px;
+}
+
+/* Notice / warning */
+.dl-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    background: #3B2A00;
+    color: #FFD060;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 11px;
+    line-height: 1.5;
 }

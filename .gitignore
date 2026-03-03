@@ -15,3 +15,14 @@ Thumbs.db
 
 # Logs
 *.log
+
+# BBB-DL setup — generated at install time, not for version control
+terminal_ciktisi.txt
+update.txt
+com.bbbtool.downloader.json
+bbb_dl_host_run.bat
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
