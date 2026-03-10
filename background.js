@@ -106,6 +106,9 @@ function updateBatchSession(data) {
     return true; // allow broadcast
 }
 
+// Start a native download via the messaging host.
+// sessionUpdater: function to update session state, returns false to suppress broadcast
+// broadcastAction: message action name for popup updates ('downloadUpdate' or 'batchUpdate')
 function startNativeDownload(url, outputDir, flags, sessionUpdater, broadcastAction) {
     let port;
     try {

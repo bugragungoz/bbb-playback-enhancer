@@ -213,9 +213,8 @@ def run_download(url: str, output_dir: str, extra_flags: list = None):
             # --- General log (skip raw spinner and verbose lines) ---
             if clean.startswith("[K") or ("/ 015 Parts" in clean):
                 continue
+            # Skip very long lines (typically raw data or base64 content)
             if len(clean) > MAX_LOG_LINE_LENGTH:
-                continue
-            if clean.startswith("http") or clean.startswith("/"):
                 continue
 
             send_message({"type": "log", "text": clean})

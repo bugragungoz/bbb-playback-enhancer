@@ -3,7 +3,8 @@
 // ===== SHARED UTILITIES =====
 
 function getPresetFlags(presetElementId) {
-    const preset = document.getElementById(presetElementId).value;
+    const el = document.getElementById(presetElementId);
+    const preset = el ? el.value : '720p';
     switch (preset) {
         case '1080p': return [
             '--skip-webcam', '--skip-cursor',
@@ -23,6 +24,7 @@ function getPresetFlags(presetElementId) {
 function showNotice(noticeId, textId, text, type) {
     const notice = document.getElementById(noticeId);
     const span = document.getElementById(textId);
+    if (!notice || !span) return;
     notice.style.display = 'flex';
     span.textContent = text;
     notice.style.background = type === 'success'
