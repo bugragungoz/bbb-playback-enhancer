@@ -67,7 +67,7 @@ function updateDlSession(data) {
 }
 
 function updateBatchSession(data) {
-    if (!data) return;
+    if (!data) return true; // allow broadcast
     if (data.type === 'phase') {
         batchSession.phase = data.text;
     } else if (data.type === 'progress') {
@@ -82,9 +82,11 @@ function updateBatchSession(data) {
             batchSession.pct = 100;
             batchSession.currentIndex++;
             if (batchSession.currentIndex < batchSession.urls.length) {
-                // Start next URL in batch
+                const logMsg = `Completed ${batchSession.currentIndex} of ${batchSession.urls.length}`;
+                if (batchSession.logs.length < 500) batchSession.logs.push(logMsg);
+                broadcastUpdate('batchUpdate', { type: 'log', text: logMsg });
                 startBatchNext();
-                return;
+                return false; // suppress default broadcast
             }
         }
         batchSession.active = false;
@@ -100,6 +102,7 @@ function updateBatchSession(data) {
         batchSession.success = false;
         batchSession.doneText = data.text || '';
     }
+    return true; // allow broadcast
 }
 
 function startNativeDownload(url, outputDir, flags, sessionUpdater) {
@@ -114,8 +117,10 @@ function startNativeDownload(url, outputDir, flags, sessionUpdater) {
     }
 
     port.onMessage.addListener((hostMsg) => {
-        sessionUpdater(hostMsg);
-        broadcastUpdate(sessionUpdater === updateDlSession ? 'downloadUpdate' : 'batchUpdate', hostMsg);
+        const shouldBroadcast = sessionUpdater(hostMsg);
+        if (shouldBroadcast !== false) {
+            broadcastUpdate(sessionUpdater === updateDlSession ? 'downloadUpdate' : 'batchUpdate', hostMsg);
+        }
     });
 
     port.onDisconnect.addListener(() => {

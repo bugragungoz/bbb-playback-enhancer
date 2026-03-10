@@ -306,8 +306,8 @@ class DownloadController {
         const span = document.getElementById('dl-notice-text');
         notice.style.display = 'flex';
         span.textContent = text;
-        notice.style.background = type === 'success' ? '#003B1F' : '#3B2A00';
-        notice.style.color = type === 'success' ? '#60FF9A' : '#FFD060';
+        notice.style.background = type === 'success' ? 'rgba(120, 140, 93, 0.15)' : 'rgba(217, 119, 87, 0.15)';
+        notice.style.color = type === 'success' ? '#788c5d' : '#d97757';
     }
 
     hideNotice() { document.getElementById('dl-notice').style.display = 'none'; }
@@ -396,11 +396,6 @@ class BatchController {
         } else if (data.type === 'progress') {
             this.updateProgress(data);
         } else if (data.type === 'done') {
-            if (data.success && !data.text?.startsWith('Batch')) {
-                // Individual URL done, batch continues — handled by background
-                this.appendLog('Completed. Moving to next...');
-                return;
-            }
             this.setDownloading(false);
             if (data.success) {
                 this.showNotice(data.text || 'Batch complete', 'success');
@@ -521,8 +516,8 @@ class BatchController {
         const span = document.getElementById('batch-notice-text');
         notice.style.display = 'flex';
         span.textContent = text;
-        notice.style.background = type === 'success' ? '#003B1F' : '#3B2A00';
-        notice.style.color = type === 'success' ? '#60FF9A' : '#FFD060';
+        notice.style.background = type === 'success' ? 'rgba(120, 140, 93, 0.15)' : 'rgba(217, 119, 87, 0.15)';
+        notice.style.color = type === 'success' ? '#788c5d' : '#d97757';
     }
 
     hideNotice() { document.getElementById('batch-notice').style.display = 'none'; }
