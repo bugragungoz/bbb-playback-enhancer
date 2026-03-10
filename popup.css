@@ -510,6 +510,26 @@ body {
     cursor: not-allowed;
 }
 
+/* Cancel variant */
+.dl-btn-cancel {
+    background: var(--s-2);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    font-size: 12px;
+    padding: 8px 16px;
+    gap: 6px;
+}
+
+.dl-btn-cancel:hover {
+    background: rgba(200, 60, 60, 0.15);
+    color: #e06060;
+    border-color: rgba(200, 60, 60, 0.3);
+}
+
+.dl-btn-cancel:active {
+    transform: scale(0.98);
+}
+
 .dl-btn-icon {
     display: flex;
     align-items: center;
@@ -597,4 +617,59 @@ body {
 .dl-preset-badge,
 .dl-log-clear {
     display: none;
+}
+
+/* =============================================
+   BATCH DOWNLOAD — file upload + textarea
+   ============================================= */
+.batch-upload-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.batch-upload-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--s-1);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 7px 12px;
+    font-family: 'Poppins', Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.batch-upload-btn:hover {
+    border-color: var(--ant-orange);
+    color: var(--ant-orange);
+    background: var(--orange-dim);
+}
+
+.batch-textarea {
+    resize: vertical;
+    min-height: 80px;
+    max-height: 200px;
+    line-height: 1.55;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 11px;
+    white-space: pre;
+    overflow-wrap: normal;
+    overflow-x: auto;
+}
+
+.batch-url-count {
+    font-family: 'Poppins', Arial, sans-serif;
+    font-size: 10px;
+    color: var(--text-muted);
+    text-align: right;
+    letter-spacing: 0.3px;
 }

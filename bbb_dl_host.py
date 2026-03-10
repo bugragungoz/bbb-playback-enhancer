@@ -14,6 +14,39 @@ import os
 import re
 import shutil
 import sysconfig
+import atexit
+import signal
+
+MAX_LOG_LINE_LENGTH = 200
+SUBPROCESS_KILL_TIMEOUT = 3
+
+# Global reference to the running subprocess, for cleanup on exit
+_current_process = None
+
+def _cleanup():
+    """Kill the bbb-dl subprocess if it is still running when the host exits."""
+    p = _current_process
+    if p and p.poll() is None:
+        try:
+            p.terminate()
+            p.wait(timeout=SUBPROCESS_KILL_TIMEOUT)
+        except Exception:
+            try:
+                p.kill()
+            except Exception:
+                pass
+
+atexit.register(_cleanup)
+
+# Also handle SIGTERM (sent by Chrome on port disconnect)
+def _sigterm_handler(signum, frame):
+    _cleanup()
+    sys.exit(0)
+
+try:
+    signal.signal(signal.SIGTERM, _sigterm_handler)
+except (OSError, ValueError):
+    pass  # signal not available on this platform
 
 # ----- Protocol -----
 
@@ -54,7 +87,23 @@ _PARTITION        = re.compile(r'(\d+)/(\d+) Partition finished')
 _NOISE_RE = re.compile(
     r'^(Done:\s*\d+|Frame:\s*\d+|'
     r'\w[\w/]+\.(?:webm|mp4|png|json|xml|html) got \d|'
-    r'Partition finished)'
+    r'Partition finished|'
+    r'Downloading:|'
+    r'Setting up|'
+    r'Launch headless|'
+    r'goto URL|'
+    r'waitForSelector|'
+    r'scrollTo|'
+    r'evaluate|'
+    r'screenshot|'
+    r'close page|'
+    r'Chromium|'
+    r'Using |'
+    r'\[headless|'
+    r'Fetching|'
+    r'Saving |'
+    r'Processing |'
+    r'Extracting )'
 )
 
 _PHASE_MAP = {
@@ -93,6 +142,7 @@ def find_bbb_dl() -> str | None:
 # ----- Download -----
 
 def run_download(url: str, output_dir: str, extra_flags: list = None):
+    global _current_process
     os.makedirs(output_dir, exist_ok=True)
 
     if extra_flags is None:
@@ -105,12 +155,8 @@ def run_download(url: str, output_dir: str, extra_flags: list = None):
     bbb_dl_exe = find_bbb_dl()
     if bbb_dl_exe:
         command = [bbb_dl_exe] + extra_flags + ["--output-dir", output_dir, url]
-        send_message({"type": "log", "text": f"bbb-dl: {bbb_dl_exe}"})
     else:
-        send_message({"type": "log", "text": "bbb-dl not found in PATH, trying python -m bbb_dl..."})
         command = [sys.executable, "-m", "bbb_dl"] + extra_flags + ["--output-dir", output_dir, url]
-
-    send_message({"type": "log", "text": f"Output: {output_dir}"})
 
     frame_total = 0  # learned from capture phase, reused for encode phase
 
@@ -124,6 +170,7 @@ def run_download(url: str, output_dir: str, extra_flags: list = None):
             errors="replace",
             bufsize=1
         )
+        _current_process = process
 
         for raw_line in process.stdout:
             clean = strip_ansi(raw_line)
@@ -196,13 +243,17 @@ def run_download(url: str, output_dir: str, extra_flags: list = None):
                 send_message({"type": "log", "text": clean})
                 continue
 
-            # --- General log (skip if it looks like a raw spinner) ---
+            # --- General log (skip raw spinner and verbose lines) ---
             if clean.startswith("[K") or ("/ 015 Parts" in clean):
+                continue
+            # Skip very long lines (typically raw data or base64 content)
+            if len(clean) > MAX_LOG_LINE_LENGTH:
                 continue
 
             send_message({"type": "log", "text": clean})
 
         process.wait()
+        _current_process = None
 
         if process.returncode == 0:
             send_message({"type": "done", "success": True,

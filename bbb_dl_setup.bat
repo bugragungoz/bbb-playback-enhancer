@@ -2,64 +2,64 @@
 setlocal EnableDelayedExpansion
 chcp 65001 >nul
 echo ============================================
-echo   BBB-DL Kurulum Scripti (Brave / Chrome)
-echo   Admin gerektirmez
+echo   BBB-DL Setup Script (Brave / Chrome)
+echo   No admin privileges required
 echo ============================================
 echo.
 
-:: ---- Python kontrolü ----
+:: ---- Python check ----
 python --version >nul 2>&1
 if %ERRORLEVEL% neq 0 (
-    echo [HATA] Python bulunamadi.
-    echo Lutfen https://www.python.org/downloads/ adresinden yukleyin.
+    echo [ERROR] Python not found.
+    echo Please install it from https://www.python.org/downloads/
     pause & exit /b 1
 )
-echo [OK] Python bulundu.
+echo [OK] Python found.
 for /f "tokens=*" %%i in ('python -c "import sys; print(sys.executable)"') do set PYTHON_EXE=%%i
-echo [OK] Python yolu: !PYTHON_EXE!
+echo [OK] Python path: !PYTHON_EXE!
 
-:: ---- bbb-dl kurulumu ----
+:: ---- bbb-dl installation ----
 echo.
-echo [*] bbb-dl kuruluyor...
+echo [*] Installing bbb-dl...
 pip install -U bbb-dl
 if %ERRORLEVEL% neq 0 (
-    echo [HATA] bbb-dl kurulumu basarisiz.
+    echo [ERROR] bbb-dl installation failed.
     pause & exit /b 1
 )
-echo [OK] bbb-dl kuruldu.
+echo [OK] bbb-dl installed.
 
-:: ---- bbb-dl PATH kontrolü ve düzeltmesi ----
+:: ---- bbb-dl PATH check and fix ----
 bbb-dl --version >nul 2>&1
 if %ERRORLEVEL% neq 0 (
-    echo [*] bbb-dl PATH'e ekleniyor...
+    echo [*] Adding bbb-dl to PATH...
     for /f "tokens=*" %%i in ('python -c "import site; print(site.getusersitepackages().replace(\"site-packages\",\"Scripts\"))"') do set SCRIPTS_DIR=%%i
     setx PATH "!PATH!;!SCRIPTS_DIR!" >nul 2>&1
-    echo [OK] PATH guncellendi: !SCRIPTS_DIR!
-    echo     (Bu terminali kapatip acmaniz gerekebilir)
+    echo [OK] PATH updated: !SCRIPTS_DIR!
+    echo     (You may need to close and reopen this terminal)
 ) else (
-    echo [OK] bbb-dl PATH'de zaten mevcut.
+    echo [OK] bbb-dl is already on PATH.
 )
 
 :: ---- Playwright Chromium ----
 echo.
-echo [*] Playwright Chromium kontrol ediliyor...
+echo [*] Checking Playwright Chromium...
 python -m playwright install chromium
-echo [OK] Playwright Chromium hazir.
+echo [OK] Playwright Chromium ready.
 
-:: ---- Cikis klasoru ----
+:: ---- Output directory ----
 if not exist "C:\croxz" mkdir "C:\croxz"
-echo [OK] Cikis klasoru: C:\croxz\
+echo [OK] Output directory: C:\croxz\
 
-:: ---- Host wrapper .bat olustur ----
-:: Bu dosya Chrome/Brave tarafindan dogrudan cagrilir
+:: ---- Create host wrapper .bat ----
+:: This file is called directly by Chrome/Brave
 set WRAPPER=%~dp0bbb_dl_host_run.bat
 (
 echo @echo off
 echo "!PYTHON_EXE!" "%%~dp0bbb_dl_host.py"
 ) > "!WRAPPER!"
-echo [OK] Host wrapper olusturuldu: !WRAPPER!
+echo [OK] Host wrapper created: !WRAPPER!
 
-:: ---- Native Messaging manifest olustur ----
+:: ---- Create Native Messaging manifest ----
 set MANIFEST_FILE=%~dp0com.bbbtool.downloader.json
 set WRAPPER_ESCAPED=!WRAPPER:\=\\!
 (
@@ -71,40 +71,40 @@ echo   "type": "stdio",
 echo   "allowed_origins": []
 echo }
 ) > "!MANIFEST_FILE!"
-echo [OK] Manifest olusturuldu: !MANIFEST_FILE!
+echo [OK] Manifest created: !MANIFEST_FILE!
 
-:: ---- Windows REGISTRY kaydı (zorunlu, klasor koymak yetmiyor) ----
+:: ---- Windows REGISTRY entry (required, folder alone is not enough) ----
 echo.
-echo [*] Windows registry'e kayit yapiliyor...
+echo [*] Registering in Windows registry...
 
 :: Brave
 reg add "HKCU\Software\BraveSoftware\Brave-Browser\NativeMessagingHosts\com.bbbtool.downloader" /ve /t REG_SZ /d "!MANIFEST_FILE!" /f >nul
-echo [OK] Brave registry kaydedildi.
+echo [OK] Brave registry entry added.
 
-:: Chrome (varsa)
+:: Chrome (if installed)
 reg add "HKCU\Software\Google\Chrome\NativeMessagingHosts\com.bbbtool.downloader" /ve /t REG_SZ /d "!MANIFEST_FILE!" /f >nul
-echo [OK] Chrome registry kaydedildi.
+echo [OK] Chrome registry entry added.
 
-:: ---- Uzanti ID'si al ve manifest guncelle ----
+:: ---- Get extension ID and update manifest ----
 echo.
 echo ============================================
-echo   Son adim: Uzanti ID
+echo   Final step: Extension ID
 echo ============================================
 echo.
-echo 1. Brave'i ac: brave://extensions
-echo 2. "Gelistirici modunu" ac (sag ust)
-echo 3. "Paketlenmemis ogeyi yukle" ile secin:
+echo 1. Open brave://extensions (or chrome://extensions)
+echo 2. Enable "Developer mode" (top-right toggle)
+echo 3. Click "Load unpacked" and select this folder:
 echo    !~dp0
-echo 4. Gorünen 32 karakterlik ID'yi asagiya girin:
+echo 4. Enter the 32-character ID shown below the extension name:
 echo.
-set /p EXT_ID="Uzanti ID: "
+set /p EXT_ID="Extension ID: "
 
 if "!EXT_ID!"=="" (
-    echo [UYARI] ID girilmedi. Sonradan tekrar calistirabilirsiniz.
+    echo [WARNING] No ID entered. You can re-run this script later.
     goto done
 )
 
-:: Manifest'i guncelle - allowed_origins ile
+:: Update manifest with allowed_origins
 (
 echo {
 echo   "name": "com.bbbtool.downloader",
@@ -114,12 +114,12 @@ echo   "type": "stdio",
 echo   "allowed_origins": ["chrome-extension://!EXT_ID!/"]
 echo }
 ) > "!MANIFEST_FILE!"
-echo [OK] Manifest guncellendi, uzanti izni eklendi.
+echo [OK] Manifest updated with extension permission.
 
 :done
 echo.
 echo ============================================
-echo   Kurulum tamamlandi!
-echo   Cikti klasoru: C:\croxz\
+echo   Setup complete!
+echo   Output directory: C:\croxz\
 echo ============================================
 pause

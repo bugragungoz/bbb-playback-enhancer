@@ -3,8 +3,172 @@
 // Also bridges Native Messaging for bbb-dl downloads
 
 const NATIVE_HOST = "com.bbbtool.downloader";
+const MAX_LOG_ENTRIES = 500;
 
-// ---- Existing: Active Tab Helper ----
+// ---- Native messaging port references (needed for cancel) ----
+let dlPort = null;
+let batchPort = null;
+
+// ---- Download session state (persists across popup open/close) ----
+let dlSession = {
+    active: false,
+    phase: '',
+    pct: 0,
+    fps: '',
+    logs: [],
+    url: '',
+    done: false,
+    success: false,
+    doneText: '',
+    cancelled: false
+};
+
+// Batch download state
+let batchSession = {
+    active: false,
+    urls: [],
+    currentIndex: 0,
+    phase: '',
+    pct: 0,
+    fps: '',
+    logs: [],
+    done: false,
+    success: false,
+    doneText: '',
+    cancelled: false
+};
+
+function resetDlSession() {
+    dlPort = null;
+    dlSession = { active: false, phase: '', pct: 0, fps: '', logs: [], url: '', done: false, success: false, doneText: '', cancelled: false };
+}
+
+function resetBatchSession() {
+    batchPort = null;
+    batchSession = { active: false, urls: [], currentIndex: 0, phase: '', pct: 0, fps: '', logs: [], done: false, success: false, doneText: '', cancelled: false };
+}
+
+function updateDlSession(data) {
+    if (!data) return;
+    if (data.type === 'phase') {
+        dlSession.phase = data.text;
+    } else if (data.type === 'progress') {
+        const { current, total, fps, time } = data;
+        if (total > 0) dlSession.pct = Math.min(100, Math.round((current / total) * 100));
+        if (fps && time) dlSession.fps = `Frame ${current} | ${fps} FPS | ${time}`;
+        else if (total > 0) dlSession.fps = `Frame ${current} / ${total}`;
+    } else if (data.type === 'log') {
+        if (dlSession.logs.length < MAX_LOG_ENTRIES) dlSession.logs.push(data.text);
+    } else if (data.type === 'done') {
+        dlSession.active = false;
+        dlSession.done = true;
+        dlSession.success = data.success;
+        dlSession.doneText = data.text || '';
+        if (data.success) { dlSession.phase = 'Download complete'; dlSession.pct = 100; }
+        else dlSession.phase = 'Failed';
+    } else if (data.type === 'error') {
+        dlSession.active = false;
+        dlSession.done = true;
+        dlSession.success = false;
+        dlSession.doneText = data.text || '';
+        if (dlSession.logs.length < MAX_LOG_ENTRIES) dlSession.logs.push('Error: ' + (data.text || ''));
+    }
+}
+
+function updateBatchSession(data) {
+    if (!data) return true; // allow broadcast
+    if (data.type === 'phase') {
+        batchSession.phase = data.text;
+    } else if (data.type === 'progress') {
+        const { current, total, fps, time } = data;
+        if (total > 0) batchSession.pct = Math.min(100, Math.round((current / total) * 100));
+        if (fps && time) batchSession.fps = `Frame ${current} | ${fps} FPS | ${time}`;
+        else if (total > 0) batchSession.fps = `Frame ${current} / ${total}`;
+    } else if (data.type === 'log') {
+        if (batchSession.logs.length < MAX_LOG_ENTRIES) batchSession.logs.push(data.text);
+    } else if (data.type === 'done') {
+        if (data.success) {
+            batchSession.pct = 100;
+            batchSession.currentIndex++;
+            if (batchSession.currentIndex < batchSession.urls.length) {
+                const logMsg = `Completed ${batchSession.currentIndex} of ${batchSession.urls.length}`;
+                if (batchSession.logs.length < MAX_LOG_ENTRIES) batchSession.logs.push(logMsg);
+                broadcastUpdate('batchUpdate', { type: 'log', text: logMsg });
+                startBatchNext();
+                return false; // suppress default broadcast
+            }
+        }
+        batchSession.active = false;
+        batchSession.done = true;
+        batchSession.success = data.success;
+        batchSession.doneText = data.success
+            ? `Batch complete: ${batchSession.urls.length} files downloaded`
+            : (data.text || 'Batch download failed');
+        batchSession.phase = data.success ? 'Batch complete' : 'Failed';
+    } else if (data.type === 'error') {
+        batchSession.active = false;
+        batchSession.done = true;
+        batchSession.success = false;
+        batchSession.doneText = data.text || '';
+    }
+    return true; // allow broadcast
+}
+
+// Start a native download via the messaging host.
+// sessionUpdater: function to update session state, returns false to suppress broadcast
+// broadcastAction: message action name for popup updates ('downloadUpdate' or 'batchUpdate')
+// Returns the port on success, or null on failure.
+function startNativeDownload(url, outputDir, flags, sessionUpdater, broadcastAction) {
+    let port;
+    try {
+        port = chrome.runtime.connectNative(NATIVE_HOST);
+    } catch (e) {
+        sessionUpdater({ type: 'error', text: 'Native host connection failed: ' + e.message });
+        broadcastUpdate(broadcastAction, { type: 'error', text: 'Native host connection failed: ' + e.message });
+        return null;
+    }
+
+    port.onMessage.addListener((hostMsg) => {
+        const shouldBroadcast = sessionUpdater(hostMsg);
+        if (shouldBroadcast !== false) {
+            broadcastUpdate(broadcastAction, hostMsg);
+        }
+    });
+
+    port.onDisconnect.addListener(() => {
+        const err = chrome.runtime.lastError;
+        // Determine which session this port belongs to
+        const session = (broadcastAction === 'downloadUpdate') ? dlSession : batchSession;
+        // If already done or cancelled, don't overwrite with a spurious failure
+        if (session.done || session.cancelled) return;
+        const msg = {
+            type: 'done',
+            success: false,
+            text: err ? `Connection lost: ${err.message}` : 'Native host connection closed.'
+        };
+        sessionUpdater(msg);
+        broadcastUpdate(broadcastAction, msg);
+    });
+
+    port.postMessage({ action: 'download', url, outputDir, flags });
+    return port;
+}
+
+function broadcastUpdate(action, data) {
+    chrome.runtime.sendMessage({ action, data }).catch(() => { });
+}
+
+function startBatchNext() {
+    const idx = batchSession.currentIndex;
+    const url = batchSession.urls[idx];
+    batchSession.phase = `Downloading ${idx + 1} of ${batchSession.urls.length}`;
+    batchSession.pct = 0;
+    batchSession.fps = '';
+    broadcastUpdate('batchUpdate', { type: 'phase', text: batchSession.phase });
+    batchPort = startNativeDownload(url, '', batchSession.flags || [], updateBatchSession, 'batchUpdate');
+}
+
+// ---- Message handler ----
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'getActiveTab') {
@@ -20,9 +184,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     // ---- Download tab trigger (from content script download button) ----
     if (message.action === 'openDownloadTab') {
-        // Store flag so popup switches to Download tab on open
         chrome.storage.session.set({ openDownloadTab: true }).catch(() => { });
-        // Open the popup programmatically (Chrome/Brave 127+)
         if (chrome.action && chrome.action.openPopup) {
             chrome.action.openPopup().catch(() => { });
         }
@@ -30,45 +192,101 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
 
-    // ---- New: Start BBB-DL download ----
+    // ---- Get current download session state ----
+    if (message.action === 'getDlSession') {
+        sendResponse(dlSession);
+        return true;
+    }
+
+    // ---- Get current batch session state ----
+    if (message.action === 'getBatchSession') {
+        sendResponse(batchSession);
+        return true;
+    }
+
+    // ---- Start single download ----
     if (message.action === 'startDownload') {
         const { url, outputDir, flags } = message;
+        resetDlSession();
+        dlSession.active = true;
+        dlSession.url = url;
+        dlSession.phase = 'Starting...';
 
-        let port;
-        try {
-            port = chrome.runtime.connectNative(NATIVE_HOST);
-        } catch (e) {
-            sendResponse({ error: 'Native host bağlanamadı: ' + e.message });
+        dlPort = startNativeDownload(url, outputDir || '', flags || [], updateDlSession, 'downloadUpdate');
+        if (!dlPort) {
+            sendResponse({ error: 'Native host connection failed. Did you run bbb_dl_setup.bat?' });
+        } else {
+            sendResponse({ ok: true });
+        }
+        return true;
+    }
+
+    // ---- Start batch download ----
+    if (message.action === 'startBatch') {
+        const { urls, flags } = message;
+        if (!urls || urls.length === 0) {
+            sendResponse({ error: 'No URLs provided' });
             return true;
         }
-
-        // Forward messages from host back to popup
-        port.onMessage.addListener((hostMsg) => {
-            chrome.runtime.sendMessage({ action: 'downloadUpdate', data: hostMsg })
-                .catch(() => { }); // popup kapanmış olabilir
-        });
-
-        port.onDisconnect.addListener(() => {
-            const err = chrome.runtime.lastError;
-            chrome.runtime.sendMessage({
-                action: 'downloadUpdate',
-                data: {
-                    type: 'done',
-                    success: false,
-                    text: err
-                        ? `❌ Bağlantı koptu: ${err.message}`
-                        : '❌ Native host bağlantısı kapandı.'
-                }
-            }).catch(() => { });
-        });
-
-        // Send the download command with preset flags
-        port.postMessage({ action: 'download', url, outputDir, flags });
+        resetBatchSession();
+        batchSession.active = true;
+        batchSession.urls = urls;
+        batchSession.flags = flags || [];
+        batchSession.currentIndex = 0;
+        startBatchNext();
         sendResponse({ ok: true });
         return true;
     }
 
-    // ---- New: Ping native host (kurulum kontrolü) ----
+    // ---- Cancel single download ----
+    if (message.action === 'cancelDownload') {
+        if (dlSession.active && dlPort) {
+            dlSession.cancelled = true;
+            dlSession.active = false;
+            dlSession.done = true;
+            dlSession.success = false;
+            dlSession.phase = 'Cancelled';
+            dlSession.doneText = 'Download cancelled.';
+            try { dlPort.disconnect(); } catch (e) { /* already disconnected */ }
+            dlPort = null;
+            broadcastUpdate('downloadUpdate', { type: 'done', success: false, text: 'Download cancelled.' });
+        }
+        sendResponse({ ok: true });
+        return true;
+    }
+
+    // ---- Cancel batch download ----
+    if (message.action === 'cancelBatch') {
+        if (batchSession.active && batchPort) {
+            batchSession.cancelled = true;
+            batchSession.active = false;
+            batchSession.done = true;
+            batchSession.success = false;
+            batchSession.phase = 'Cancelled';
+            batchSession.doneText = `Batch cancelled at ${batchSession.currentIndex + 1} of ${batchSession.urls.length}.`;
+            try { batchPort.disconnect(); } catch (e) { /* already disconnected */ }
+            batchPort = null;
+            broadcastUpdate('batchUpdate', { type: 'done', success: false, text: batchSession.doneText });
+        }
+        sendResponse({ ok: true });
+        return true;
+    }
+
+    // ---- Reset download session ----
+    if (message.action === 'resetDlSession') {
+        resetDlSession();
+        sendResponse({ ok: true });
+        return true;
+    }
+
+    // ---- Reset batch session ----
+    if (message.action === 'resetBatchSession') {
+        resetBatchSession();
+        sendResponse({ ok: true });
+        return true;
+    }
+
+    // ---- Ping native host ----
     if (message.action === 'pingNativeHost') {
         let port;
         try {
@@ -85,7 +303,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         port.onDisconnect.addListener(() => {
             const err = chrome.runtime.lastError;
-            sendResponse({ ok: false, error: err ? err.message : 'Bağlantı başarısız' });
+            sendResponse({ ok: false, error: err ? err.message : 'Connection failed' });
         });
 
         port.postMessage({ action: 'ping' });
