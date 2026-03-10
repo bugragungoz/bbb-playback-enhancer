@@ -339,32 +339,57 @@ class BatchController {
 
     init() {
         this.bindEvents();
-        this.renderUrlInputs();
         this.listenForUpdates();
         this.restoreSession();
     }
 
     bindEvents() {
-        document.getElementById('batch-count').addEventListener('change', () => this.renderUrlInputs());
+        document.getElementById('batch-upload-btn').addEventListener('click', () => {
+            document.getElementById('batch-file-input').click();
+        });
+        document.getElementById('batch-file-input').addEventListener('change', (e) => this.handleFileUpload(e));
+        document.getElementById('batch-urls-text').addEventListener('input', () => {
+            this.updateUrlCount();
+            document.getElementById('batch-upload-label').textContent = 'Choose .txt file';
+        });
         document.getElementById('batch-start').addEventListener('click', () => this.startBatch());
         document.getElementById('batch-cancel').addEventListener('click', () => this.cancelBatch());
     }
 
-    renderUrlInputs() {
-        const count = parseInt(document.getElementById('batch-count').value) || 2;
-        const container = document.getElementById('batch-urls-container');
-        container.innerHTML = '';
-        for (let i = 0; i < count; i++) {
-            const field = document.createElement('div');
-            field.className = 'dl-field';
-            field.innerHTML = `
-                <label class="dl-label">URL ${i + 1}</label>
-                <input type="url" class="dl-input batch-url-input"
-                    placeholder="https://bbb.example.com/playback/presentation/..."
-                    spellcheck="false" />
-            `;
-            container.appendChild(field);
-        }
+    /** Read .txt file and populate the textarea with parsed URLs. */
+    handleFileUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const text = ev.target.result || '';
+            // Split by commas, newlines, or semicolons; trim and filter empty
+            const urls = text.split(/[,;\r\n]+/)
+                .map(u => u.trim())
+                .filter(u => u.length > 0);
+            const textarea = document.getElementById('batch-urls-text');
+            textarea.value = urls.join('\n');
+            this.updateUrlCount();
+            document.getElementById('batch-upload-label').textContent = file.name;
+        };
+        reader.readAsText(file);
+        // Reset file input so re-selecting the same file triggers change
+        e.target.value = '';
+    }
+
+    /** Parse URLs from the textarea (one per line). */
+    getUrls() {
+        const text = document.getElementById('batch-urls-text').value || '';
+        return text.split(/[\r\n]+/)
+            .map(u => u.trim())
+            .filter(u => u.length > 0);
+    }
+
+    /** Update the URL counter below the textarea. */
+    updateUrlCount() {
+        const count = this.getUrls().length;
+        document.getElementById('batch-url-count').textContent =
+            count === 1 ? '1 URL' : `${count} URLs`;
     }
 
     listenForUpdates() {
@@ -466,12 +491,7 @@ class BatchController {
     async startBatch() {
         if (this.isDownloading) return;
 
-        const inputs = document.querySelectorAll('.batch-url-input');
-        const urls = [];
-        inputs.forEach(input => {
-            const v = input.value.trim();
-            if (v) urls.push(v);
-        });
+        const urls = this.getUrls();
 
         if (urls.length === 0) {
             showNotice('batch-notice', 'batch-notice-text', 'Enter at least one URL.', 'warn');

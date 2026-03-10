@@ -174,31 +174,38 @@
         <!-- ===== TAB: BATCH DOWNLOAD ===== -->
         <div id="panel-batch" style="display:none">
             <div class="dl-section">
-                <!-- URL count selector -->
+                <!-- Preset -->
                 <div class="dl-field">
-                    <label class="dl-label" for="batch-count">Number of URLs</label>
-                    <div class="dl-input-row">
-                        <select id="batch-count" class="dl-input" style="flex:0 0 70px">
-                            <option value="2" selected>2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                            <option value="7">7</option>
-                            <option value="8">8</option>
-                            <option value="9">9</option>
-                            <option value="10">10</option>
-                        </select>
-                        <select id="batch-preset" class="dl-input">
-                            <option value="720p" selected>720p</option>
-                            <option value="1080p">1080p</option>
-                            <option value="480p">480p</option>
-                        </select>
+                    <label class="dl-label" for="batch-preset">Preset</label>
+                    <select id="batch-preset" class="dl-input">
+                        <option value="720p" selected>720p</option>
+                        <option value="1080p">1080p</option>
+                        <option value="480p">480p</option>
+                    </select>
+                </div>
+
+                <!-- File upload -->
+                <div class="dl-field">
+                    <label class="dl-label">Load URLs from file</label>
+                    <div class="batch-upload-row">
+                        <button class="batch-upload-btn" id="batch-upload-btn" type="button">
+                            <svg viewBox="0 0 24 24" width="14" height="14">
+                                <path fill="currentColor" d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" />
+                            </svg>
+                            <span id="batch-upload-label">Choose .txt file</span>
+                        </button>
+                        <input type="file" id="batch-file-input" accept=".txt,text/plain" style="display:none" />
                     </div>
                 </div>
 
-                <!-- Dynamic URL inputs container -->
-                <div id="batch-urls-container" class="batch-urls-container"></div>
+                <!-- URL textarea -->
+                <div class="dl-field">
+                    <label class="dl-label" for="batch-urls-text">URLs (one per line)</label>
+                    <textarea id="batch-urls-text" class="dl-input batch-textarea"
+                        placeholder="https://bbb.example.com/playback/presentation/abc123&#10;https://bbb.example.com/playback/presentation/def456&#10;..."
+                        spellcheck="false" rows="5"></textarea>
+                    <div class="batch-url-count" id="batch-url-count">0 URLs</div>
+                </div>
 
                 <!-- Batch Download Button -->
                 <button class="dl-btn" id="batch-start">

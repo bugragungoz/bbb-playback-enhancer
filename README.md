@@ -20,8 +20,8 @@ Browser extension for BigBlueButton playback pages. Provides modern media contro
 - Download state persists across popup open/close
 
 **Batch download tab**
-- Enter multiple recording URLs and download them sequentially
-- Configurable URL count (2 to 10)
+- Upload a .txt file containing recording URLs (one per line, or comma/semicolon separated)
+- Or type/paste URLs directly into the textarea
 - Same preset options and progress tracking as single download
 
 ## Requirements
@@ -82,7 +82,7 @@ After the script completes, reload the extension in the browser (click the reloa
 4. Select a preset (720p recommended) and click Download
 5. Output is saved to `C:\croxz\`
 
-For batch downloads, switch to the Batch tab, set the number of URLs, paste each recording link, and click Download All. Files are processed sequentially.
+For batch downloads, switch to the Batch tab, upload a .txt file with recording URLs (one per line or comma-separated), and click Download All. Files are processed sequentially. You can also paste URLs directly into the textarea.
 
 ## Keyboard Shortcuts
 
