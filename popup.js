@@ -1,5 +1,36 @@
 // BBB Playback Enhancer - Popup Script
 
+// ===== SHARED UTILITIES =====
+
+function getPresetFlags(presetElementId) {
+    const preset = document.getElementById(presetElementId).value;
+    switch (preset) {
+        case '1080p': return [
+            '--skip-webcam', '--skip-cursor',
+            '--force-width', '1920', '--force-height', '1080',
+            '--preset', 'medium', '--crf', '20'];
+        case '480p': return [
+            '--skip-webcam', '--skip-cursor',
+            '--force-width', '854', '--force-height', '480',
+            '--preset', 'fast', '--crf', '24'];
+        default: return [
+            '--skip-webcam', '--skip-cursor',
+            '--force-width', '1280', '--force-height', '720',
+            '--preset', 'medium', '--crf', '22'];
+    }
+}
+
+function showNotice(noticeId, textId, text, type) {
+    const notice = document.getElementById(noticeId);
+    const span = document.getElementById(textId);
+    notice.style.display = 'flex';
+    span.textContent = text;
+    notice.style.background = type === 'success'
+        ? 'rgba(120, 140, 93, 0.15)'
+        : 'rgba(217, 119, 87, 0.15)';
+    notice.style.color = type === 'success' ? '#788c5d' : '#d97757';
+}
+
 // ===== CONTROL TAB =====
 
 class PopupController {
@@ -130,7 +161,6 @@ class DownloadController {
         } catch (e) { /* ignore */ }
         this.bindEvents();
         this.listenForUpdates();
-        // Restore session state from background
         this.restoreSession();
     }
 
@@ -164,9 +194,9 @@ class DownloadController {
                 }
                 if (session.done) {
                     if (session.success) {
-                        this.showNotice(session.doneText || 'Download complete', 'success');
+                        showNotice('dl-notice', 'dl-notice-text', session.doneText || 'Download complete', 'success');
                     } else if (session.doneText) {
-                        this.showNotice(session.doneText, 'warn');
+                        showNotice('dl-notice', 'dl-notice-text', session.doneText, 'warn');
                     }
                 }
                 document.getElementById('dl-progress-section').style.display = 'flex';
@@ -189,7 +219,7 @@ class DownloadController {
         } else if (data.type === 'done') {
             this.setDownloading(false);
             if (data.success) {
-                this.showNotice(data.text || 'Download complete', 'success');
+                showNotice('dl-notice', 'dl-notice-text', data.text || 'Download complete', 'success');
                 this.setPhase('Download complete');
                 this.setProgressBar(100);
             } else {
@@ -240,36 +270,17 @@ class DownloadController {
         logEl.scrollTop = logEl.scrollHeight;
     }
 
-    getPresetFlags(presetId) {
-        const preset = document.getElementById(presetId || 'dl-preset').value;
-        switch (preset) {
-            case '1080p': return [
-                '--skip-webcam', '--skip-cursor',
-                '--force-width', '1920', '--force-height', '1080',
-                '--preset', 'medium', '--crf', '20'];
-            case '480p': return [
-                '--skip-webcam', '--skip-cursor',
-                '--force-width', '854', '--force-height', '480',
-                '--preset', 'fast', '--crf', '24'];
-            default: return [
-                '--skip-webcam', '--skip-cursor',
-                '--force-width', '1280', '--force-height', '720',
-                '--preset', 'medium', '--crf', '22'];
-        }
-    }
-
     async startDownload() {
         if (this.isDownloading) return;
         const url = this.currentTabUrl;
         if (!url || !/\/playback/i.test(url)) {
-            this.showNotice('No BBB playback page detected.', 'warn');
+            showNotice('dl-notice', 'dl-notice-text', 'No BBB playback page detected.', 'warn');
             return;
         }
 
         this.hideNotice();
         this.setDownloading(true);
 
-        // Reset progress UI
         this.setProgressBar(0);
         this.setPhase('Starting...');
         document.getElementById('dl-fps').textContent = '';
@@ -277,7 +288,7 @@ class DownloadController {
         document.getElementById('dl-log-wrap').style.display = 'none';
 
         try {
-            const flags = this.getPresetFlags('dl-preset');
+            const flags = getPresetFlags('dl-preset');
             const resp = await chrome.runtime.sendMessage({
                 action: 'startDownload',
                 url,
@@ -286,11 +297,12 @@ class DownloadController {
             });
             if (resp && resp.error) {
                 this.setDownloading(false);
-                this.showNotice('Connection error: ' + resp.error + '\n\nDid you run bbb_dl_setup.bat?', 'warn');
+                showNotice('dl-notice', 'dl-notice-text',
+                    'Connection error: ' + resp.error + '\n\nDid you run bbb_dl_setup.bat?', 'warn');
             }
         } catch (e) {
             this.setDownloading(false);
-            this.showNotice('Connection error: ' + e.message, 'warn');
+            showNotice('dl-notice', 'dl-notice-text', 'Connection error: ' + e.message, 'warn');
         }
     }
 
@@ -299,15 +311,6 @@ class DownloadController {
         document.getElementById('dl-start').disabled = active;
         document.getElementById('dl-spinner').style.display = active ? 'flex' : 'none';
         document.getElementById('dl-btn-text').textContent = active ? 'Downloading...' : 'Download';
-    }
-
-    showNotice(text, type = 'warn') {
-        const notice = document.getElementById('dl-notice');
-        const span = document.getElementById('dl-notice-text');
-        notice.style.display = 'flex';
-        span.textContent = text;
-        notice.style.background = type === 'success' ? 'rgba(120, 140, 93, 0.15)' : 'rgba(217, 119, 87, 0.15)';
-        notice.style.color = type === 'success' ? '#788c5d' : '#d97757';
     }
 
     hideNotice() { document.getElementById('dl-notice').style.display = 'none'; }
@@ -376,9 +379,9 @@ class BatchController {
                 }
                 if (session.done) {
                     if (session.success) {
-                        this.showNotice(session.doneText || 'Batch complete', 'success');
+                        showNotice('batch-notice', 'batch-notice-text', session.doneText || 'Batch complete', 'success');
                     } else if (session.doneText) {
-                        this.showNotice(session.doneText, 'warn');
+                        showNotice('batch-notice', 'batch-notice-text', session.doneText, 'warn');
                     }
                 }
                 document.getElementById('batch-progress-section').style.display = 'flex';
@@ -398,7 +401,7 @@ class BatchController {
         } else if (data.type === 'done') {
             this.setDownloading(false);
             if (data.success) {
-                this.showNotice(data.text || 'Batch complete', 'success');
+                showNotice('batch-notice', 'batch-notice-text', data.text || 'Batch complete', 'success');
                 this.setPhase('Batch complete');
                 this.setProgressBar(100);
             } else {
@@ -446,24 +449,6 @@ class BatchController {
         logEl.scrollTop = logEl.scrollHeight;
     }
 
-    getPresetFlags() {
-        const preset = document.getElementById('batch-preset').value;
-        switch (preset) {
-            case '1080p': return [
-                '--skip-webcam', '--skip-cursor',
-                '--force-width', '1920', '--force-height', '1080',
-                '--preset', 'medium', '--crf', '20'];
-            case '480p': return [
-                '--skip-webcam', '--skip-cursor',
-                '--force-width', '854', '--force-height', '480',
-                '--preset', 'fast', '--crf', '24'];
-            default: return [
-                '--skip-webcam', '--skip-cursor',
-                '--force-width', '1280', '--force-height', '720',
-                '--preset', 'medium', '--crf', '22'];
-        }
-    }
-
     async startBatch() {
         if (this.isDownloading) return;
 
@@ -475,7 +460,7 @@ class BatchController {
         });
 
         if (urls.length === 0) {
-            this.showNotice('Enter at least one URL.', 'warn');
+            showNotice('batch-notice', 'batch-notice-text', 'Enter at least one URL.', 'warn');
             return;
         }
 
@@ -488,7 +473,7 @@ class BatchController {
         document.getElementById('batch-log-wrap').style.display = 'none';
 
         try {
-            const flags = this.getPresetFlags();
+            const flags = getPresetFlags('batch-preset');
             const resp = await chrome.runtime.sendMessage({
                 action: 'startBatch',
                 urls,
@@ -496,11 +481,11 @@ class BatchController {
             });
             if (resp && resp.error) {
                 this.setDownloading(false);
-                this.showNotice('Error: ' + resp.error, 'warn');
+                showNotice('batch-notice', 'batch-notice-text', 'Error: ' + resp.error, 'warn');
             }
         } catch (e) {
             this.setDownloading(false);
-            this.showNotice('Connection error: ' + e.message, 'warn');
+            showNotice('batch-notice', 'batch-notice-text', 'Connection error: ' + e.message, 'warn');
         }
     }
 
@@ -509,15 +494,6 @@ class BatchController {
         document.getElementById('batch-start').disabled = active;
         document.getElementById('batch-spinner').style.display = active ? 'flex' : 'none';
         document.getElementById('batch-btn-text').textContent = active ? 'Downloading...' : 'Download All';
-    }
-
-    showNotice(text, type = 'warn') {
-        const notice = document.getElementById('batch-notice');
-        const span = document.getElementById('batch-notice-text');
-        notice.style.display = 'flex';
-        span.textContent = text;
-        notice.style.background = type === 'success' ? 'rgba(120, 140, 93, 0.15)' : 'rgba(217, 119, 87, 0.15)';
-        notice.style.color = type === 'success' ? '#788c5d' : '#d97757';
     }
 
     hideNotice() { document.getElementById('batch-notice').style.display = 'none'; }

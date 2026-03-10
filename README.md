@@ -6,14 +6,14 @@ Browser extension for BigBlueButton playback pages. Provides modern media contro
 
 ## Features
 
-**Control tab** -- always available on BBB pages
+**Control tab** - always available on BBB pages
 - Custom media control bar with seek, volume, fullscreen
-- Variable playback speed (0.25x -- 16x)
+- Variable playback speed (0.25x to 16x)
 - Progress bar with seek-to-position and hover tooltip
 - Keyboard shortcuts (see table below)
 - Download button in the control bar opens the Download tab
 
-**Download tab** -- requires one-time setup
+**Download tab** - requires one-time setup
 - Downloads any BBB recording as MP4 via [bbb-dl](https://github.com/C0D3D3V/bbb-dl)
 - Presets: 720p, 1080p, 480p (slides + audio, webcam excluded)
 - Real-time progress bar with phase labels
@@ -21,7 +21,7 @@ Browser extension for BigBlueButton playback pages. Provides modern media contro
 
 **Batch download tab**
 - Enter multiple recording URLs and download them sequentially
-- Configurable URL count (2--10)
+- Configurable URL count (2 to 10)
 - Same preset options and progress tracking as single download
 
 ## Requirements
@@ -39,7 +39,7 @@ ffmpeg, Playwright, and bbb-dl are all installed automatically by the setup scri
 
 This extension has two parts: the browser extension itself and a local Python bridge that handles the actual downloading. Both must be set up.
 
-### Step 1 -- Load the extension
+### Step 1 - Load the extension
 
 1. Open `brave://extensions` (or `chrome://extensions`)
 2. Enable **Developer mode** (top-right toggle)
@@ -48,7 +48,7 @@ This extension has two parts: the browser extension itself and a local Python br
 
 After this step you will have media controls on BBB pages, but downloads will not work until Step 2 is complete.
 
-### Step 2 -- Run the setup script
+### Step 2 - Run the setup script
 
 Double-click `bbb_dl_setup.bat`. This is required for the download feature to work. The script runs in user space (no admin privileges needed) and does the following:
 
@@ -66,13 +66,13 @@ After the script completes, reload the extension in the browser (click the reloa
 
 ### Common issues
 
-**"bbb-dl not found"** -- Close and reopen your terminal after running the setup script. The PATH update requires a new terminal session.
+**"bbb-dl not found"** - Close and reopen your terminal after running the setup script. The PATH update requires a new terminal session.
 
-**Download button does nothing** -- You likely skipped Step 2. The download feature requires the native messaging host to be registered. Run `bbb_dl_setup.bat`.
+**Download button does nothing** - You likely skipped Step 2. The download feature requires the native messaging host to be registered. Run `bbb_dl_setup.bat`.
 
-**"Native host connection failed"** -- Re-run `bbb_dl_setup.bat` and make sure you entered the correct Extension ID. The ID changes if you remove and re-add the extension.
+**"Native host connection failed"** - Re-run `bbb_dl_setup.bat` and make sure you entered the correct Extension ID. The ID changes if you remove and re-add the extension.
 
-**Python not found** -- Install Python from https://python.org/downloads and check "Add to PATH" during installation.
+**Python not found** - Install Python from https://python.org/downloads and check "Add to PATH" during installation.
 
 ## Usage
 
@@ -94,7 +94,7 @@ For batch downloads, switch to the Batch tab, set the number of URLs, paste each
 | M | Mute/Unmute |
 | F | Toggle fullscreen |
 | < / > | Decrease/Increase speed |
-| 0--9 | Seek to 0%--90% |
+| 0-9 | Seek to 0% to 90% |
 
 ## Supported Sites
 

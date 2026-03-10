@@ -3,6 +3,7 @@
 // Also bridges Native Messaging for bbb-dl downloads
 
 const NATIVE_HOST = "com.bbbtool.downloader";
+const MAX_LOG_ENTRIES = 500;
 
 // ---- Download session state (persists across popup open/close) ----
 let dlSession = {
@@ -49,7 +50,7 @@ function updateDlSession(data) {
         if (fps && time) dlSession.fps = `Frame ${current} | ${fps} FPS | ${time}`;
         else if (total > 0) dlSession.fps = `Frame ${current} / ${total}`;
     } else if (data.type === 'log') {
-        if (dlSession.logs.length < 500) dlSession.logs.push(data.text);
+        if (dlSession.logs.length < MAX_LOG_ENTRIES) dlSession.logs.push(data.text);
     } else if (data.type === 'done') {
         dlSession.active = false;
         dlSession.done = true;
@@ -62,7 +63,7 @@ function updateDlSession(data) {
         dlSession.done = true;
         dlSession.success = false;
         dlSession.doneText = data.text || '';
-        if (dlSession.logs.length < 500) dlSession.logs.push('Error: ' + (data.text || ''));
+        if (dlSession.logs.length < MAX_LOG_ENTRIES) dlSession.logs.push('Error: ' + (data.text || ''));
     }
 }
 
@@ -76,14 +77,14 @@ function updateBatchSession(data) {
         if (fps && time) batchSession.fps = `Frame ${current} | ${fps} FPS | ${time}`;
         else if (total > 0) batchSession.fps = `Frame ${current} / ${total}`;
     } else if (data.type === 'log') {
-        if (batchSession.logs.length < 500) batchSession.logs.push(data.text);
+        if (batchSession.logs.length < MAX_LOG_ENTRIES) batchSession.logs.push(data.text);
     } else if (data.type === 'done') {
         if (data.success) {
             batchSession.pct = 100;
             batchSession.currentIndex++;
             if (batchSession.currentIndex < batchSession.urls.length) {
                 const logMsg = `Completed ${batchSession.currentIndex} of ${batchSession.urls.length}`;
-                if (batchSession.logs.length < 500) batchSession.logs.push(logMsg);
+                if (batchSession.logs.length < MAX_LOG_ENTRIES) batchSession.logs.push(logMsg);
                 broadcastUpdate('batchUpdate', { type: 'log', text: logMsg });
                 startBatchNext();
                 return false; // suppress default broadcast
@@ -105,21 +106,20 @@ function updateBatchSession(data) {
     return true; // allow broadcast
 }
 
-function startNativeDownload(url, outputDir, flags, sessionUpdater) {
+function startNativeDownload(url, outputDir, flags, sessionUpdater, broadcastAction) {
     let port;
     try {
         port = chrome.runtime.connectNative(NATIVE_HOST);
     } catch (e) {
         sessionUpdater({ type: 'error', text: 'Native host connection failed: ' + e.message });
-        broadcastUpdate(sessionUpdater === updateDlSession ? 'downloadUpdate' : 'batchUpdate',
-            { type: 'error', text: 'Native host connection failed: ' + e.message });
+        broadcastUpdate(broadcastAction, { type: 'error', text: 'Native host connection failed: ' + e.message });
         return false;
     }
 
     port.onMessage.addListener((hostMsg) => {
         const shouldBroadcast = sessionUpdater(hostMsg);
         if (shouldBroadcast !== false) {
-            broadcastUpdate(sessionUpdater === updateDlSession ? 'downloadUpdate' : 'batchUpdate', hostMsg);
+            broadcastUpdate(broadcastAction, hostMsg);
         }
     });
 
@@ -131,7 +131,7 @@ function startNativeDownload(url, outputDir, flags, sessionUpdater) {
             text: err ? `Connection lost: ${err.message}` : 'Native host connection closed.'
         };
         sessionUpdater(msg);
-        broadcastUpdate(sessionUpdater === updateDlSession ? 'downloadUpdate' : 'batchUpdate', msg);
+        broadcastUpdate(broadcastAction, msg);
     });
 
     port.postMessage({ action: 'download', url, outputDir, flags });
@@ -149,7 +149,7 @@ function startBatchNext() {
     batchSession.pct = 0;
     batchSession.fps = '';
     broadcastUpdate('batchUpdate', { type: 'phase', text: batchSession.phase });
-    startNativeDownload(url, '', batchSession.flags || [], updateBatchSession);
+    startNativeDownload(url, '', batchSession.flags || [], updateBatchSession, 'batchUpdate');
 }
 
 // ---- Message handler ----
@@ -196,7 +196,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         dlSession.url = url;
         dlSession.phase = 'Starting...';
 
-        const ok = startNativeDownload(url, outputDir || '', flags || [], updateDlSession);
+        const ok = startNativeDownload(url, outputDir || '', flags || [], updateDlSession, 'downloadUpdate');
         if (!ok) {
             sendResponse({ error: 'Native host connection failed. Did you run bbb_dl_setup.bat?' });
         } else {
