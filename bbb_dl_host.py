@@ -14,8 +14,39 @@ import os
 import re
 import shutil
 import sysconfig
+import atexit
+import signal
 
 MAX_LOG_LINE_LENGTH = 200
+SUBPROCESS_KILL_TIMEOUT = 3
+
+# Global reference to the running subprocess, for cleanup on exit
+_current_process = None
+
+def _cleanup():
+    """Kill the bbb-dl subprocess if it is still running when the host exits."""
+    p = _current_process
+    if p and p.poll() is None:
+        try:
+            p.terminate()
+            p.wait(timeout=SUBPROCESS_KILL_TIMEOUT)
+        except Exception:
+            try:
+                p.kill()
+            except Exception:
+                pass
+
+atexit.register(_cleanup)
+
+# Also handle SIGTERM (sent by Chrome on port disconnect)
+def _sigterm_handler(signum, frame):
+    _cleanup()
+    sys.exit(0)
+
+try:
+    signal.signal(signal.SIGTERM, _sigterm_handler)
+except (OSError, ValueError):
+    pass  # signal not available on this platform
 
 # ----- Protocol -----
 
@@ -111,6 +142,7 @@ def find_bbb_dl() -> str | None:
 # ----- Download -----
 
 def run_download(url: str, output_dir: str, extra_flags: list = None):
+    global _current_process
     os.makedirs(output_dir, exist_ok=True)
 
     if extra_flags is None:
@@ -138,6 +170,7 @@ def run_download(url: str, output_dir: str, extra_flags: list = None):
             errors="replace",
             bufsize=1
         )
+        _current_process = process
 
         for raw_line in process.stdout:
             clean = strip_ansi(raw_line)
@@ -220,6 +253,7 @@ def run_download(url: str, output_dir: str, extra_flags: list = None):
             send_message({"type": "log", "text": clean})
 
         process.wait()
+        _current_process = None
 
         if process.returncode == 0:
             send_message({"type": "done", "success": True,

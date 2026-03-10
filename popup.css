@@ -510,6 +510,26 @@ body {
     cursor: not-allowed;
 }
 
+/* Cancel variant */
+.dl-btn-cancel {
+    background: var(--s-2);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    font-size: 12px;
+    padding: 8px 16px;
+    gap: 6px;
+}
+
+.dl-btn-cancel:hover {
+    background: rgba(200, 60, 60, 0.15);
+    color: #e06060;
+    border-color: rgba(200, 60, 60, 0.3);
+}
+
+.dl-btn-cancel:active {
+    transform: scale(0.98);
+}
+
 .dl-btn-icon {
     display: flex;
     align-items: center;

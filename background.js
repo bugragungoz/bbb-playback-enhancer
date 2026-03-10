@@ -5,6 +5,10 @@
 const NATIVE_HOST = "com.bbbtool.downloader";
 const MAX_LOG_ENTRIES = 500;
 
+// ---- Native messaging port references (needed for cancel) ----
+let dlPort = null;
+let batchPort = null;
+
 // ---- Download session state (persists across popup open/close) ----
 let dlSession = {
     active: false,
@@ -15,7 +19,8 @@ let dlSession = {
     url: '',
     done: false,
     success: false,
-    doneText: ''
+    doneText: '',
+    cancelled: false
 };
 
 // Batch download state
@@ -29,15 +34,18 @@ let batchSession = {
     logs: [],
     done: false,
     success: false,
-    doneText: ''
+    doneText: '',
+    cancelled: false
 };
 
 function resetDlSession() {
-    dlSession = { active: false, phase: '', pct: 0, fps: '', logs: [], url: '', done: false, success: false, doneText: '' };
+    dlPort = null;
+    dlSession = { active: false, phase: '', pct: 0, fps: '', logs: [], url: '', done: false, success: false, doneText: '', cancelled: false };
 }
 
 function resetBatchSession() {
-    batchSession = { active: false, urls: [], currentIndex: 0, phase: '', pct: 0, fps: '', logs: [], done: false, success: false, doneText: '' };
+    batchPort = null;
+    batchSession = { active: false, urls: [], currentIndex: 0, phase: '', pct: 0, fps: '', logs: [], done: false, success: false, doneText: '', cancelled: false };
 }
 
 function updateDlSession(data) {
@@ -109,6 +117,7 @@ function updateBatchSession(data) {
 // Start a native download via the messaging host.
 // sessionUpdater: function to update session state, returns false to suppress broadcast
 // broadcastAction: message action name for popup updates ('downloadUpdate' or 'batchUpdate')
+// Returns the port on success, or null on failure.
 function startNativeDownload(url, outputDir, flags, sessionUpdater, broadcastAction) {
     let port;
     try {
@@ -116,7 +125,7 @@ function startNativeDownload(url, outputDir, flags, sessionUpdater, broadcastAct
     } catch (e) {
         sessionUpdater({ type: 'error', text: 'Native host connection failed: ' + e.message });
         broadcastUpdate(broadcastAction, { type: 'error', text: 'Native host connection failed: ' + e.message });
-        return false;
+        return null;
     }
 
     port.onMessage.addListener((hostMsg) => {
@@ -128,6 +137,10 @@ function startNativeDownload(url, outputDir, flags, sessionUpdater, broadcastAct
 
     port.onDisconnect.addListener(() => {
         const err = chrome.runtime.lastError;
+        // Determine which session this port belongs to
+        const session = (broadcastAction === 'downloadUpdate') ? dlSession : batchSession;
+        // If already done or cancelled, don't overwrite with a spurious failure
+        if (session.done || session.cancelled) return;
         const msg = {
             type: 'done',
             success: false,
@@ -138,7 +151,7 @@ function startNativeDownload(url, outputDir, flags, sessionUpdater, broadcastAct
     });
 
     port.postMessage({ action: 'download', url, outputDir, flags });
-    return true;
+    return port;
 }
 
 function broadcastUpdate(action, data) {
@@ -152,7 +165,7 @@ function startBatchNext() {
     batchSession.pct = 0;
     batchSession.fps = '';
     broadcastUpdate('batchUpdate', { type: 'phase', text: batchSession.phase });
-    startNativeDownload(url, '', batchSession.flags || [], updateBatchSession, 'batchUpdate');
+    batchPort = startNativeDownload(url, '', batchSession.flags || [], updateBatchSession, 'batchUpdate');
 }
 
 // ---- Message handler ----
@@ -199,8 +212,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         dlSession.url = url;
         dlSession.phase = 'Starting...';
 
-        const ok = startNativeDownload(url, outputDir || '', flags || [], updateDlSession, 'downloadUpdate');
-        if (!ok) {
+        dlPort = startNativeDownload(url, outputDir || '', flags || [], updateDlSession, 'downloadUpdate');
+        if (!dlPort) {
             sendResponse({ error: 'Native host connection failed. Did you run bbb_dl_setup.bat?' });
         } else {
             sendResponse({ ok: true });
@@ -221,6 +234,40 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         batchSession.flags = flags || [];
         batchSession.currentIndex = 0;
         startBatchNext();
+        sendResponse({ ok: true });
+        return true;
+    }
+
+    // ---- Cancel single download ----
+    if (message.action === 'cancelDownload') {
+        if (dlSession.active && dlPort) {
+            dlSession.cancelled = true;
+            dlSession.active = false;
+            dlSession.done = true;
+            dlSession.success = false;
+            dlSession.phase = 'Cancelled';
+            dlSession.doneText = 'Download cancelled.';
+            try { dlPort.disconnect(); } catch (e) { /* already disconnected */ }
+            dlPort = null;
+            broadcastUpdate('downloadUpdate', { type: 'done', success: false, text: 'Download cancelled.' });
+        }
+        sendResponse({ ok: true });
+        return true;
+    }
+
+    // ---- Cancel batch download ----
+    if (message.action === 'cancelBatch') {
+        if (batchSession.active && batchPort) {
+            batchSession.cancelled = true;
+            batchSession.active = false;
+            batchSession.done = true;
+            batchSession.success = false;
+            batchSession.phase = 'Cancelled';
+            batchSession.doneText = `Batch cancelled at ${batchSession.currentIndex + 1} of ${batchSession.urls.length}.`;
+            try { batchPort.disconnect(); } catch (e) { /* already disconnected */ }
+            batchPort = null;
+            broadcastUpdate('batchUpdate', { type: 'done', success: false, text: batchSession.doneText });
+        }
         sendResponse({ ok: true });
         return true;
     }

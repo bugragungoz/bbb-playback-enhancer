@@ -168,6 +168,7 @@ class DownloadController {
 
     bindEvents() {
         document.getElementById('dl-start').addEventListener('click', () => this.startDownload());
+        document.getElementById('dl-cancel').addEventListener('click', () => this.cancelDownload());
     }
 
     listenForUpdates() {
@@ -308,11 +309,21 @@ class DownloadController {
         }
     }
 
+    async cancelDownload() {
+        try {
+            await chrome.runtime.sendMessage({ action: 'cancelDownload' });
+        } catch (e) { /* ignore */ }
+        this.setDownloading(false);
+        this.setPhase('Cancelled');
+        showNotice('dl-notice', 'dl-notice-text', 'Download cancelled.', 'warn');
+    }
+
     setDownloading(active) {
         this.isDownloading = active;
         document.getElementById('dl-start').disabled = active;
         document.getElementById('dl-spinner').style.display = active ? 'flex' : 'none';
         document.getElementById('dl-btn-text').textContent = active ? 'Downloading...' : 'Download';
+        document.getElementById('dl-cancel').style.display = active ? 'flex' : 'none';
     }
 
     hideNotice() { document.getElementById('dl-notice').style.display = 'none'; }
@@ -336,6 +347,7 @@ class BatchController {
     bindEvents() {
         document.getElementById('batch-count').addEventListener('change', () => this.renderUrlInputs());
         document.getElementById('batch-start').addEventListener('click', () => this.startBatch());
+        document.getElementById('batch-cancel').addEventListener('click', () => this.cancelBatch());
     }
 
     renderUrlInputs() {
@@ -491,11 +503,21 @@ class BatchController {
         }
     }
 
+    async cancelBatch() {
+        try {
+            await chrome.runtime.sendMessage({ action: 'cancelBatch' });
+        } catch (e) { /* ignore */ }
+        this.setDownloading(false);
+        this.setPhase('Cancelled');
+        showNotice('batch-notice', 'batch-notice-text', 'Batch download cancelled.', 'warn');
+    }
+
     setDownloading(active) {
         this.isDownloading = active;
         document.getElementById('batch-start').disabled = active;
         document.getElementById('batch-spinner').style.display = active ? 'flex' : 'none';
         document.getElementById('batch-btn-text').textContent = active ? 'Downloading...' : 'Download All';
+        document.getElementById('batch-cancel').style.display = active ? 'flex' : 'none';
     }
 
     hideNotice() { document.getElementById('batch-notice').style.display = 'none'; }
