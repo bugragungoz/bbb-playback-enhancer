@@ -118,8 +118,6 @@ class DownloadController {
     constructor() {
         this.isDownloading = false;
         this.currentTabUrl = '';
-        this.simTimer = null;       // simulated progress timer
-        this.simPct = 0;            // current simulated %
         this.init();
     }
 
@@ -128,20 +126,15 @@ class DownloadController {
             const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
             if (tabs[0] && tabs[0].url) {
                 this.currentTabUrl = tabs[0].url;
-                if (/\/playback\/presentation/i.test(this.currentTabUrl) ||
-                    /bbb.*\/playback/i.test(this.currentTabUrl)) {
-                    document.getElementById('dl-url').value = this.currentTabUrl;
-                }
             }
         } catch (e) { /* ignore */ }
         this.bindEvents();
         this.listenForUpdates();
+        // Restore session state from background
+        this.restoreSession();
     }
 
     bindEvents() {
-        document.getElementById('dl-use-current').addEventListener('click', () => {
-            if (this.currentTabUrl) document.getElementById('dl-url').value = this.currentTabUrl;
-        });
         document.getElementById('dl-start').addEventListener('click', () => this.startDownload());
     }
 
@@ -149,6 +142,36 @@ class DownloadController {
         chrome.runtime.onMessage.addListener((msg) => {
             if (msg.action === 'downloadUpdate') this.handleHostMessage(msg.data);
         });
+    }
+
+    async restoreSession() {
+        try {
+            const session = await chrome.runtime.sendMessage({ action: 'getDlSession' });
+            if (!session) return;
+            if (session.active || session.done) {
+                this.setDownloading(session.active);
+                if (session.phase) this.setPhase(session.phase);
+                if (session.pct > 0) this.setProgressBar(session.pct);
+                if (session.fps) {
+                    document.getElementById('dl-fps').textContent = session.fps;
+                }
+                if (session.logs && session.logs.length > 0) {
+                    const logEl = document.getElementById('dl-log');
+                    const logWrap = document.getElementById('dl-log-wrap');
+                    logWrap.style.display = 'flex';
+                    logEl.textContent = session.logs.join('\n') + '\n';
+                    logEl.scrollTop = logEl.scrollHeight;
+                }
+                if (session.done) {
+                    if (session.success) {
+                        this.showNotice(session.doneText || 'Download complete', 'success');
+                    } else if (session.doneText) {
+                        this.showNotice(session.doneText, 'warn');
+                    }
+                }
+                document.getElementById('dl-progress-section').style.display = 'flex';
+            }
+        } catch (e) { /* background not ready */ }
     }
 
     handleHostMessage(data) {
@@ -164,44 +187,20 @@ class DownloadController {
             this.updateProgress(data);
 
         } else if (data.type === 'done') {
-            this.stopSimProgress(true);
             this.setDownloading(false);
-            this.appendLog(data.text || '');
             if (data.success) {
-                this.showNotice(data.text, 'success');
+                this.showNotice(data.text || 'Download complete', 'success');
                 this.setPhase('Download complete');
+                this.setProgressBar(100);
             } else {
-                this.stopSimProgress(false);
                 this.setPhase('Failed');
+                if (data.text) this.appendLog(data.text);
             }
 
         } else if (data.type === 'error') {
             this.setDownloading(false);
             this.appendLog('Error: ' + (data.text || ''));
-
         }
-    }
-
-    startSimProgress() {
-        this.stopSimProgress(false);
-        this.simPct = 0;
-        let step = 0;
-        // ~240s / 0.8s per tick = 300 ticks to reach 99%
-        const STEPS = 300;
-        this.simTimer = setInterval(() => {
-            step++;
-            const eased = Math.sqrt(step / STEPS);         // sqrt easing: fast then slow
-            this.simPct = Math.min(99, Math.round(eased * 99));
-            this.setProgressBar(this.simPct);
-        }, 800);
-    }
-
-    stopSimProgress(snapTo100 = false) {
-        if (this.simTimer) {
-            clearInterval(this.simTimer);
-            this.simTimer = null;
-        }
-        if (snapTo100) this.setProgressBar(100);
     }
 
     setPhase(text) {
@@ -212,24 +211,18 @@ class DownloadController {
 
     updateProgress(data) {
         document.getElementById('dl-progress-section').style.display = 'flex';
-        const { current, total, phase, fps, time } = data;
+        const { current, total, fps, time } = data;
 
         if (total > 0) {
             const pct = Math.min(100, Math.round((current / total) * 100));
             this.setProgressBar(pct);
         }
 
-        // FPS / time info
         const fpsEl = document.getElementById('dl-fps');
         if (fps && time) {
             fpsEl.textContent = `Frame ${current} | ${fps} FPS | ${time}`;
         } else if (total > 0) {
             fpsEl.textContent = `Frame ${current} / ${total}`;
-        }
-
-        // Update phase label on first encode line
-        if (phase === 'encode' && document.getElementById('dl-phase').textContent.startsWith('[FFMPEG]')) {
-            // already set by phase message
         }
     }
 
@@ -247,8 +240,8 @@ class DownloadController {
         logEl.scrollTop = logEl.scrollHeight;
     }
 
-    getPresetFlags() {
-        const preset = document.getElementById('dl-preset').value;
+    getPresetFlags(presetId) {
+        const preset = document.getElementById(presetId || 'dl-preset').value;
         switch (preset) {
             case '1080p': return [
                 '--skip-webcam', '--skip-cursor',
@@ -267,23 +260,24 @@ class DownloadController {
 
     async startDownload() {
         if (this.isDownloading) return;
-        const url = document.getElementById('dl-url').value.trim();
-        if (!url) { this.showNotice('Please enter a BBB URL.', 'warn'); return; }
+        const url = this.currentTabUrl;
+        if (!url || !/\/playback/i.test(url)) {
+            this.showNotice('No BBB playback page detected.', 'warn');
+            return;
+        }
 
         this.hideNotice();
         this.setDownloading(true);
 
         // Reset progress UI
-        this.stopSimProgress(false);
         this.setProgressBar(0);
         this.setPhase('Starting...');
         document.getElementById('dl-fps').textContent = '';
         document.getElementById('dl-log').textContent = '';
         document.getElementById('dl-log-wrap').style.display = 'none';
-        this.startSimProgress();   // begin simulated fill
 
         try {
-            const flags = this.getPresetFlags();
+            const flags = this.getPresetFlags('dl-preset');
             const resp = await chrome.runtime.sendMessage({
                 action: 'startDownload',
                 url,
@@ -319,6 +313,221 @@ class DownloadController {
     hideNotice() { document.getElementById('dl-notice').style.display = 'none'; }
 }
 
+// ===== BATCH DOWNLOAD TAB =====
+
+class BatchController {
+    constructor() {
+        this.isDownloading = false;
+        this.init();
+    }
+
+    init() {
+        this.bindEvents();
+        this.renderUrlInputs();
+        this.listenForUpdates();
+        this.restoreSession();
+    }
+
+    bindEvents() {
+        document.getElementById('batch-count').addEventListener('change', () => this.renderUrlInputs());
+        document.getElementById('batch-start').addEventListener('click', () => this.startBatch());
+    }
+
+    renderUrlInputs() {
+        const count = parseInt(document.getElementById('batch-count').value) || 2;
+        const container = document.getElementById('batch-urls-container');
+        container.innerHTML = '';
+        for (let i = 0; i < count; i++) {
+            const field = document.createElement('div');
+            field.className = 'dl-field';
+            field.innerHTML = `
+                <label class="dl-label">URL ${i + 1}</label>
+                <input type="url" class="dl-input batch-url-input"
+                    placeholder="https://bbb.example.com/playback/presentation/..."
+                    spellcheck="false" />
+            `;
+            container.appendChild(field);
+        }
+    }
+
+    listenForUpdates() {
+        chrome.runtime.onMessage.addListener((msg) => {
+            if (msg.action === 'batchUpdate') this.handleHostMessage(msg.data);
+        });
+    }
+
+    async restoreSession() {
+        try {
+            const session = await chrome.runtime.sendMessage({ action: 'getBatchSession' });
+            if (!session) return;
+            if (session.active || session.done) {
+                this.setDownloading(session.active);
+                if (session.phase) this.setPhase(session.phase);
+                if (session.pct > 0) this.setProgressBar(session.pct);
+                if (session.fps) {
+                    document.getElementById('batch-fps').textContent = session.fps;
+                }
+                if (session.logs && session.logs.length > 0) {
+                    const logEl = document.getElementById('batch-log');
+                    const logWrap = document.getElementById('batch-log-wrap');
+                    logWrap.style.display = 'flex';
+                    logEl.textContent = session.logs.join('\n') + '\n';
+                    logEl.scrollTop = logEl.scrollHeight;
+                }
+                if (session.done) {
+                    if (session.success) {
+                        this.showNotice(session.doneText || 'Batch complete', 'success');
+                    } else if (session.doneText) {
+                        this.showNotice(session.doneText, 'warn');
+                    }
+                }
+                document.getElementById('batch-progress-section').style.display = 'flex';
+            }
+        } catch (e) { /* background not ready */ }
+    }
+
+    handleHostMessage(data) {
+        if (!data) return;
+
+        if (data.type === 'log') {
+            this.appendLog(data.text);
+        } else if (data.type === 'phase') {
+            this.setPhase(data.text);
+        } else if (data.type === 'progress') {
+            this.updateProgress(data);
+        } else if (data.type === 'done') {
+            if (data.success && !data.text?.startsWith('Batch')) {
+                // Individual URL done, batch continues — handled by background
+                this.appendLog('Completed. Moving to next...');
+                return;
+            }
+            this.setDownloading(false);
+            if (data.success) {
+                this.showNotice(data.text || 'Batch complete', 'success');
+                this.setPhase('Batch complete');
+                this.setProgressBar(100);
+            } else {
+                this.setPhase('Failed');
+                if (data.text) this.appendLog(data.text);
+            }
+        } else if (data.type === 'error') {
+            this.setDownloading(false);
+            this.appendLog('Error: ' + (data.text || ''));
+        }
+    }
+
+    setPhase(text) {
+        const el = document.getElementById('batch-phase');
+        if (el) el.textContent = text;
+        document.getElementById('batch-progress-section').style.display = 'flex';
+    }
+
+    updateProgress(data) {
+        document.getElementById('batch-progress-section').style.display = 'flex';
+        const { current, total, fps, time } = data;
+        if (total > 0) {
+            const pct = Math.min(100, Math.round((current / total) * 100));
+            this.setProgressBar(pct);
+        }
+        const fpsEl = document.getElementById('batch-fps');
+        if (fps && time) {
+            fpsEl.textContent = `Frame ${current} | ${fps} FPS | ${time}`;
+        } else if (total > 0) {
+            fpsEl.textContent = `Frame ${current} / ${total}`;
+        }
+    }
+
+    setProgressBar(pct) {
+        document.getElementById('batch-bar-fill').style.width = `${pct}%`;
+        document.getElementById('batch-pct').textContent = `${pct}%`;
+    }
+
+    appendLog(text) {
+        if (!text) return;
+        const logEl = document.getElementById('batch-log');
+        const logWrap = document.getElementById('batch-log-wrap');
+        logWrap.style.display = 'flex';
+        logEl.textContent += text + '\n';
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    getPresetFlags() {
+        const preset = document.getElementById('batch-preset').value;
+        switch (preset) {
+            case '1080p': return [
+                '--skip-webcam', '--skip-cursor',
+                '--force-width', '1920', '--force-height', '1080',
+                '--preset', 'medium', '--crf', '20'];
+            case '480p': return [
+                '--skip-webcam', '--skip-cursor',
+                '--force-width', '854', '--force-height', '480',
+                '--preset', 'fast', '--crf', '24'];
+            default: return [
+                '--skip-webcam', '--skip-cursor',
+                '--force-width', '1280', '--force-height', '720',
+                '--preset', 'medium', '--crf', '22'];
+        }
+    }
+
+    async startBatch() {
+        if (this.isDownloading) return;
+
+        const inputs = document.querySelectorAll('.batch-url-input');
+        const urls = [];
+        inputs.forEach(input => {
+            const v = input.value.trim();
+            if (v) urls.push(v);
+        });
+
+        if (urls.length === 0) {
+            this.showNotice('Enter at least one URL.', 'warn');
+            return;
+        }
+
+        this.hideNotice();
+        this.setDownloading(true);
+        this.setProgressBar(0);
+        this.setPhase(`Starting batch: ${urls.length} URLs`);
+        document.getElementById('batch-fps').textContent = '';
+        document.getElementById('batch-log').textContent = '';
+        document.getElementById('batch-log-wrap').style.display = 'none';
+
+        try {
+            const flags = this.getPresetFlags();
+            const resp = await chrome.runtime.sendMessage({
+                action: 'startBatch',
+                urls,
+                flags
+            });
+            if (resp && resp.error) {
+                this.setDownloading(false);
+                this.showNotice('Error: ' + resp.error, 'warn');
+            }
+        } catch (e) {
+            this.setDownloading(false);
+            this.showNotice('Connection error: ' + e.message, 'warn');
+        }
+    }
+
+    setDownloading(active) {
+        this.isDownloading = active;
+        document.getElementById('batch-start').disabled = active;
+        document.getElementById('batch-spinner').style.display = active ? 'flex' : 'none';
+        document.getElementById('batch-btn-text').textContent = active ? 'Downloading...' : 'Download All';
+    }
+
+    showNotice(text, type = 'warn') {
+        const notice = document.getElementById('batch-notice');
+        const span = document.getElementById('batch-notice-text');
+        notice.style.display = 'flex';
+        span.textContent = text;
+        notice.style.background = type === 'success' ? '#003B1F' : '#3B2A00';
+        notice.style.color = type === 'success' ? '#60FF9A' : '#FFD060';
+    }
+
+    hideNotice() { document.getElementById('batch-notice').style.display = 'none'; }
+}
+
 // ===== TAB SWITCHER =====
 
 class TabManager {
@@ -326,7 +535,6 @@ class TabManager {
 
     async init() {
         this.bindTabs();
-        // If content-script download button was pressed, open directly on Download tab
         try {
             const result = await chrome.storage.session.get('openDownloadTab');
             if (result && result.openDownloadTab) {
@@ -339,12 +547,15 @@ class TabManager {
     bindTabs() {
         document.getElementById('tab-control').addEventListener('click', () => this.switchTo('control'));
         document.getElementById('tab-download').addEventListener('click', () => this.switchTo('download'));
+        document.getElementById('tab-batch').addEventListener('click', () => this.switchTo('batch'));
     }
+
     switchTo(tab) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`tab-${tab}`).classList.add('active');
         document.getElementById('panel-control').style.display = tab === 'control' ? '' : 'none';
         document.getElementById('panel-download').style.display = tab === 'download' ? '' : 'none';
+        document.getElementById('panel-batch').style.display = tab === 'batch' ? '' : 'none';
     }
 }
 
@@ -353,4 +564,5 @@ document.addEventListener('DOMContentLoaded', () => {
     new TabManager();
     new PopupController();
     new DownloadController();
+    new BatchController();
 });

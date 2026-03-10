@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "BBB Playback Enhancer",
   "version": "1.2.0",
-  "description": "BigBlueButton playback pages için modern medya kontrol arayüzü",
+  "description": "Modern media control interface for BigBlueButton playback pages",
   "author": "Bugra",
   "icons": {
     "16": "icons/icon16.png",

@@ -598,3 +598,25 @@ body {
 .dl-log-clear {
     display: none;
 }
+
+/* =============================================
+   BATCH DOWNLOAD — URL inputs container
+   ============================================= */
+.batch-urls-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+
+.batch-urls-container::-webkit-scrollbar {
+    width: 4px;
+}
+
+.batch-urls-container::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+}

@@ -54,7 +54,23 @@ _PARTITION        = re.compile(r'(\d+)/(\d+) Partition finished')
 _NOISE_RE = re.compile(
     r'^(Done:\s*\d+|Frame:\s*\d+|'
     r'\w[\w/]+\.(?:webm|mp4|png|json|xml|html) got \d|'
-    r'Partition finished)'
+    r'Partition finished|'
+    r'Downloading:|'
+    r'Setting up|'
+    r'Launch headless|'
+    r'goto URL|'
+    r'waitForSelector|'
+    r'scrollTo|'
+    r'evaluate|'
+    r'screenshot|'
+    r'close page|'
+    r'Chromium|'
+    r'Using |'
+    r'\[headless|'
+    r'Fetching|'
+    r'Saving |'
+    r'Processing |'
+    r'Extracting )'
 )
 
 _PHASE_MAP = {
@@ -105,12 +121,8 @@ def run_download(url: str, output_dir: str, extra_flags: list = None):
     bbb_dl_exe = find_bbb_dl()
     if bbb_dl_exe:
         command = [bbb_dl_exe] + extra_flags + ["--output-dir", output_dir, url]
-        send_message({"type": "log", "text": f"bbb-dl: {bbb_dl_exe}"})
     else:
-        send_message({"type": "log", "text": "bbb-dl not found in PATH, trying python -m bbb_dl..."})
         command = [sys.executable, "-m", "bbb_dl"] + extra_flags + ["--output-dir", output_dir, url]
-
-    send_message({"type": "log", "text": f"Output: {output_dir}"})
 
     frame_total = 0  # learned from capture phase, reused for encode phase
 
@@ -196,8 +208,12 @@ def run_download(url: str, output_dir: str, extra_flags: list = None):
                 send_message({"type": "log", "text": clean})
                 continue
 
-            # --- General log (skip if it looks like a raw spinner) ---
+            # --- General log (skip raw spinner and verbose lines) ---
             if clean.startswith("[K") or ("/ 015 Parts" in clean):
+                continue
+            if len(clean) > 200:
+                continue
+            if clean.startswith("http") or clean.startswith("/"):
                 continue
 
             send_message({"type": "log", "text": clean})

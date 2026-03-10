@@ -1,6 +1,6 @@
 /**
  * BBB Playback Enhancer
- * BigBlueButton kayıt oynatma sayfaları için modern medya kontrol arayüzü
+ * Modern media control interface for BigBlueButton playback pages
  */
 
 (function () {
@@ -382,7 +382,7 @@
                 
                 <div class="bbb-enhancer-controls-bottom">
                     <div class="bbb-enhancer-controls-left">
-                        <button class="bbb-enhancer-btn bbb-enhancer-btn-play" id="bbb-play-btn" title="Oynat/Duraklat (Boşluk)">
+                        <button class="bbb-enhancer-btn bbb-enhancer-btn-play" id="bbb-play-btn" title="Play/Pause (Space)">
                             <svg class="bbb-icon bbb-icon-play" viewBox="0 0 24 24">
                                 <path d="M8 5v14l11-7z"/>
                             </svg>
@@ -391,14 +391,14 @@
                             </svg>
                         </button>
                         
-                        <button class="bbb-enhancer-btn bbb-enhancer-btn-seek" id="bbb-backward-btn" title="10 Saniye Geri (←)">
+                        <button class="bbb-enhancer-btn bbb-enhancer-btn-seek" id="bbb-backward-btn" title="Rewind 10s (←)">
                             <svg class="bbb-icon" viewBox="0 0 24 24">
                                 <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
                                 <text x="12" y="15.5" text-anchor="middle" font-size="7" font-weight="700" font-family="sans-serif" fill="currentColor">10</text>
                             </svg>
                         </button>
                         
-                        <button class="bbb-enhancer-btn bbb-enhancer-btn-seek" id="bbb-forward-btn" title="10 Saniye İleri (→)">
+                        <button class="bbb-enhancer-btn bbb-enhancer-btn-seek" id="bbb-forward-btn" title="Forward 10s (→)">
                             <svg class="bbb-icon" viewBox="0 0 24 24">
                                 <path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/>
                                 <text x="12" y="15.5" text-anchor="middle" font-size="7" font-weight="700" font-family="sans-serif" fill="currentColor">10</text>
@@ -406,7 +406,7 @@
                         </button>
                         
                         <div class="bbb-enhancer-volume-container">
-                            <button class="bbb-enhancer-btn" id="bbb-mute-btn" title="Ses Aç/Kapat (M)">
+                            <button class="bbb-enhancer-btn" id="bbb-mute-btn" title="Mute/Unmute (M)">
                                 <svg class="bbb-icon bbb-icon-volume" viewBox="0 0 24 24">
                                     <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
                                 </svg>
@@ -433,17 +433,17 @@
                     
                     <div class="bbb-enhancer-controls-right">
                         <div class="bbb-enhancer-rate-container">
-                            <button class="bbb-enhancer-btn bbb-enhancer-rate-btn" id="bbb-rate-btn" title="Oynatma Hızı">
+                            <button class="bbb-enhancer-btn bbb-enhancer-rate-btn" id="bbb-rate-btn" title="Playback Speed">
                                 <span id="bbb-rate-label">1x</span>
                             </button>
                             <div class="bbb-enhancer-rate-menu" id="bbb-rate-menu">
-                                <div class="bbb-enhancer-rate-menu-title">Oynatma Hızı</div>
+                                <div class="bbb-enhancer-rate-menu-title">Playback Speed</div>
                                 <div class="bbb-enhancer-rate-menu-items" id="bbb-rate-menu-items">
                                 </div>
                             </div>
                         </div>
                         
-                        <button class="bbb-enhancer-btn" id="bbb-fullscreen-btn" title="Tam Ekran (F)">
+                        <button class="bbb-enhancer-btn" id="bbb-fullscreen-btn" title="Fullscreen (F)">
                             <svg class="bbb-icon bbb-icon-fullscreen" viewBox="0 0 24 24">
                                 <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
                             </svg>
