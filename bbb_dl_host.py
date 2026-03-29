@@ -16,6 +16,7 @@ import shutil
 import sysconfig
 import atexit
 import signal
+from urllib.parse import urlsplit, urlunsplit, parse_qs, urlencode
 
 MAX_LOG_LINE_LENGTH = 200
 SUBPROCESS_KILL_TIMEOUT = 3
@@ -138,6 +139,56 @@ def find_bbb_dl() -> str | None:
         if os.path.exists(c):
             return c
     return None
+
+# ----- URL Normalization -----
+
+def normalize_bbb_playback_url(url: str) -> str:
+    """
+    Normalize BBB playback URL variants for bbb-dl.
+    Converts:
+      .../playback/presentation/<ver>/<meetingId>
+    to:
+      .../playback/presentation/<ver>/playback.html?meetingId=<meetingId>
+    """
+    if not url:
+        return url
+
+    raw = url.strip()
+    try:
+        parts = urlsplit(raw)
+    except Exception:
+        return raw
+
+    if not parts.scheme or not parts.netloc:
+        return raw
+
+    path = parts.path or ""
+    if "/playback/presentation/" not in path.lower():
+        return raw
+
+    query = parse_qs(parts.query, keep_blank_values=True)
+    existing = query.get("meetingId", [])
+    if any(v.strip() for v in existing):
+        return raw
+
+    segments = [seg for seg in path.split("/") if seg]
+    if not segments:
+        return raw
+
+    meeting_id = segments[-1]
+    if meeting_id.lower() == "playback.html":
+        return raw
+
+    base_path = path[:path.rfind("/") + 1] + "playback.html"
+    query["meetingId"] = [meeting_id]
+
+    return urlunsplit((
+        parts.scheme,
+        parts.netloc,
+        base_path,
+        urlencode(query, doseq=True),
+        parts.fragment
+    ))
 
 # ----- Download -----
 
@@ -289,8 +340,11 @@ def main():
             if not url:
                 send_message({"type": "done", "success": False, "text": "URL cannot be empty."})
                 continue
-            send_message({"type": "log", "text": f"Starting: {url}"})
-            thread = threading.Thread(target=run_download, args=(url, output_dir, extra_flags), daemon=True)
+            normalized_url = normalize_bbb_playback_url(url)
+            if normalized_url != url:
+                send_message({"type": "log", "text": "Normalized BBB playback URL format."})
+            send_message({"type": "log", "text": f"Starting: {normalized_url}"})
+            thread = threading.Thread(target=run_download, args=(normalized_url, output_dir, extra_flags), daemon=True)
             thread.start()
             thread.join()
 
