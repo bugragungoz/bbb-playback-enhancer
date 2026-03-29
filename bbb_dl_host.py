@@ -163,7 +163,8 @@ def normalize_bbb_playback_url(url: str) -> str:
         return raw
 
     path = parts.path or ""
-    if "/playback/presentation/" not in path.lower():
+    path_lower = path.lower()
+    if "/playback/presentation/" not in path_lower:
         return raw
 
     query = parse_qs(parts.query, keep_blank_values=True)
@@ -179,7 +180,10 @@ def normalize_bbb_playback_url(url: str) -> str:
     if meeting_id.lower() == "playback.html":
         return raw
 
-    base_path = path[:path.rfind("/") + 1] + "playback.html"
+    slash_idx = path.rfind("/")
+    if slash_idx < 0:
+        return raw
+    base_path = path[:slash_idx + 1] + "playback.html"
     query["meetingId"] = [meeting_id]
 
     return urlunsplit((
