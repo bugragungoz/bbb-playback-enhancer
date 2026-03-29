@@ -156,7 +156,7 @@ def normalize_bbb_playback_url(url: str) -> str:
     raw = url.strip()
     try:
         parts = urlsplit(raw)
-    except Exception:
+    except ValueError:
         return raw
 
     if not parts.scheme or not parts.netloc:
@@ -180,10 +180,13 @@ def normalize_bbb_playback_url(url: str) -> str:
     if meeting_id.lower() == "playback.html":
         return raw
 
-    slash_idx = path.rfind("/")
-    if slash_idx < 0:
+    prefix_segments = segments[:-1]
+    if not prefix_segments:
         return raw
-    base_path = path[:slash_idx + 1] + "playback.html"
+    if path.startswith("/"):
+        base_path = "/" + "/".join(prefix_segments) + "/playback.html"
+    else:
+        base_path = "/".join(prefix_segments) + "/playback.html"
     query["meetingId"] = [meeting_id]
 
     return urlunsplit((
