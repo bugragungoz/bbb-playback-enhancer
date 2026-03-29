@@ -9,7 +9,6 @@ import sys
 import json
 import struct
 import subprocess
-import threading
 import os
 import re
 import shutil
@@ -221,7 +220,7 @@ def run_download(url: str, output_dir: str, extra_flags: list = None, emit_done:
     frame_total = 0  # learned from capture phase, reused for encode phase
 
     success = False
-    done_text = "Unknown error."
+    done_text = "Download did not complete successfully."
 
     try:
         process = subprocess.Popen(
@@ -359,22 +358,13 @@ def main():
             normalized_url = normalize_bbb_playback_url(url)
             if normalized_url != url:
                 send_message({"type": "log", "text": "Normalized BBB playback URL format."})
-            result = {"success": False, "text": "Unknown error."}
-
-            def _download_with_fallback():
-                send_message({"type": "log", "text": f"Starting: {normalized_url}"})
-                success, text = run_download(normalized_url, output_dir, extra_flags, emit_done=False)
-                if (not success) and normalized_url != url:
-                    send_message({"type": "log", "text": "Retrying with original BBB playback URL format."})
-                    send_message({"type": "log", "text": f"Retrying: {url}"})
-                    success, text = run_download(url, output_dir, extra_flags, emit_done=False)
-                result["success"] = success
-                result["text"] = text
-
-            thread = threading.Thread(target=_download_with_fallback, daemon=True)
-            thread.start()
-            thread.join()
-            send_message({"type": "done", "success": result["success"], "text": result["text"]})
+            send_message({"type": "log", "text": f"Starting: {normalized_url}"})
+            success, text = run_download(normalized_url, output_dir, extra_flags, emit_done=False)
+            if (not success) and normalized_url != url:
+                send_message({"type": "log", "text": "Retrying with original BBB playback URL format."})
+                send_message({"type": "log", "text": f"Retrying: {url}"})
+                success, text = run_download(url, output_dir, extra_flags, emit_done=False)
+            send_message({"type": "done", "success": success, "text": text})
 
         elif action == "ping":
             bbb = find_bbb_dl()
