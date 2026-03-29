@@ -169,7 +169,8 @@ def normalize_bbb_playback_url(url: str) -> str:
 
     query = parse_qs(parts.query, keep_blank_values=True)
     existing = query.get("meetingId", [])
-    if any(v.strip() for v in existing):
+    # Keep already-populated meetingId; intentionally replace blank meetingId values.
+    if existing and any(v.strip() for v in existing):
         return raw
 
     segments = [seg for seg in path.split("/") if seg]
@@ -183,7 +184,8 @@ def normalize_bbb_playback_url(url: str) -> str:
     prefix_segments = segments[:-1]
     if not prefix_segments:
         return raw
-    if path.startswith("/"):
+    absolute_path = path.startswith("/")
+    if absolute_path:
         base_path = "/" + "/".join(prefix_segments) + "/playback.html"
     else:
         base_path = "/".join(prefix_segments) + "/playback.html"
