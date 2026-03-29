@@ -9,7 +9,6 @@ import sys
 import json
 import struct
 import subprocess
-import threading
 import os
 import re
 import shutil
@@ -201,7 +200,7 @@ def normalize_bbb_playback_url(url: str) -> str:
 
 # ----- Download -----
 
-def run_download(url: str, output_dir: str, extra_flags: list = None):
+def run_download(url: str, output_dir: str, extra_flags: list = None, emit_done: bool = True):
     global _current_process
     os.makedirs(output_dir, exist_ok=True)
 
@@ -219,6 +218,9 @@ def run_download(url: str, output_dir: str, extra_flags: list = None):
         command = [sys.executable, "-m", "bbb_dl"] + extra_flags + ["--output-dir", output_dir, url]
 
     frame_total = 0  # learned from capture phase, reused for encode phase
+
+    success = False
+    done_text = "Download did not complete successfully."
 
     try:
         process = subprocess.Popen(
@@ -313,20 +315,24 @@ def run_download(url: str, output_dir: str, extra_flags: list = None):
             send_message({"type": "log", "text": clean})
 
         process.wait()
-        _current_process = None
 
         if process.returncode == 0:
-            send_message({"type": "done", "success": True,
-                          "text": f"Download complete. Output: {output_dir}"})
+            success = True
+            done_text = f"Download complete. Output: {output_dir}"
         else:
-            send_message({"type": "done", "success": False,
-                          "text": f"bbb-dl exited with code {process.returncode}"})
+            done_text = f"bbb-dl exited with code {process.returncode}"
 
     except FileNotFoundError:
-        send_message({"type": "done", "success": False,
-                      "text": "bbb-dl not found. Run bbb_dl_setup.bat again."})
+        done_text = "bbb-dl not found. Run bbb_dl_setup.bat again."
     except Exception as e:
-        send_message({"type": "done", "success": False, "text": f"Error: {e}"})
+        done_text = f"Error: {e}"
+    finally:
+        _current_process = None
+
+    if emit_done:
+        send_message({"type": "done", "success": success, "text": done_text})
+
+    return success, done_text
 
 
 # ----- Main -----
@@ -353,9 +359,12 @@ def main():
             if normalized_url != url:
                 send_message({"type": "log", "text": "Normalized BBB playback URL format."})
             send_message({"type": "log", "text": f"Starting: {normalized_url}"})
-            thread = threading.Thread(target=run_download, args=(normalized_url, output_dir, extra_flags), daemon=True)
-            thread.start()
-            thread.join()
+            success, text = run_download(normalized_url, output_dir, extra_flags, emit_done=False)
+            if (not success) and normalized_url != url:
+                send_message({"type": "log", "text": "Retrying with original BBB playback URL format."})
+                send_message({"type": "log", "text": f"Retrying: {url}"})
+                success, text = run_download(url, output_dir, extra_flags, emit_done=False)
+            send_message({"type": "done", "success": success, "text": text})
 
         elif action == "ping":
             bbb = find_bbb_dl()
